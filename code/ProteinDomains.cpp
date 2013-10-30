@@ -107,14 +107,17 @@ void ProteinDomains::ReadDomains(char* inFileName, Motif** inputMotifs, int numM
 	if(in==NULL){perror("Cannot open protein domain file");exit(1);}
 
 	//Count the number of motifs
-	fgets(line, LONG_STR, in);
-	while(!feof(in)){		
+	while(fgets(line, LONG_STR, in)){
 		if(strlen(line)>2){//if it's not a newline
 			lineCount++;
 			sscanf(line, "%s %s ", name, seq);
 			protAlignLen = strlen(seq);
 		}
-		fgets(line, LONG_STR, in);
+	}
+
+	if(protAlignLen==0){
+		perror("No motif found");
+		exit(1);
 	}
 
 	domainMotif = new ProteinMotif(protAlignLen);
@@ -128,9 +131,7 @@ void ProteinDomains::ReadDomains(char* inFileName, Motif** inputMotifs, int numM
 		strcpy(individualMotifs[i]->name, currMotifName);
 		currCount=0;
 		
-		fseek(in, 0, SEEK_SET);
-		while(!feof(in)){		
-			fgets(line, LONG_STR, in);
+		while(fgets(line, LONG_STR, in)) {
 			if(strlen(line)>2){//if it's not a newline
 				sscanf(line, "%s %s ", name, seq);
 				if(strstr(name, currMotifName)!=NULL){
@@ -158,8 +159,7 @@ void ProteinDomains::ReadDomains(char* inFileName, Motif** inputMotifs, int numM
 	//Read through once more, this time just constructing the overall alignment
 	strcpy(domainMotif->name, "OverallDomain");
 	fseek(in, 0, SEEK_SET);
-	fgets(line, LONG_STR, in);
-	while(!feof(in)){		
+	while(fgets(line, LONG_STR, in)){
 		sscanf(line, "%s %s ", name, seq);
 		if(strlen(line)>2){//if it's not a newline
 			//Add to the domain motif
@@ -169,7 +169,6 @@ void ProteinDomains::ReadDomains(char* inFileName, Motif** inputMotifs, int numM
 					domainMotif->f[j][char2num(seq[j])]++;
 			}
 		}
-		fgets(line, LONG_STR, in);
 	}
 	for(j=0; j<protAlignLen; j++){
 		for(a=0; a<AA; a++){

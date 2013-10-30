@@ -130,8 +130,7 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 	//read in the Motif input file.
 	inp = fopen(fn, "r");
 	if(inp==NULL){perror("Cannot open input file");exit(1);}
-	while(!feof(inp)){
-		fgets(line, LONG_STR, inp);
+	while(fgets(line, LONG_STR, inp)){
 		//Read the first word. 3 cases handled at the moment
 		sscanf(line, " %s", tag);
 
@@ -354,8 +353,7 @@ void PlatformSupport::ReadScoreDists(char* fn)
 	//read in the score distribution input file.
 	inp = fopen(fn, "r");
 	if(inp==NULL){perror("Cannot open input file");exit(1);}
-	while(!feof(inp)){
-		fgets(line, STR_LEN, inp);
+	while(fgets(line, STR_LEN, inp)){
 		sscanf(line, " %d %d %lf %lf %lf %lf %lf", &x,&y,&mean, &std_dev, &count, &min, &max);
 		scoreDistMean[x][y] =mean;
 		scoreDistStdDev[x][y]=std_dev;
