@@ -51,6 +51,9 @@ public:
 	
 	//Actual comparison method
 	virtual double Compare(Motif* M_A, int colA, Motif* M_B, int colB)=0;
+
+	//Destructor
+	virtual ~ColumnComp() {}
 };
 
 //Pearson Correlation Coefficient

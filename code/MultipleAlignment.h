@@ -82,7 +82,7 @@ public:
 	void WeightedFBP(MultiAlignRec* alignment, Motif* currProfile);
 
 	//Destructor
-	~MultipleAlignment(){if(completeAlignment!=NULL){delete completeAlignment;}}
+	virtual ~MultipleAlignment(){if(completeAlignment!=NULL){delete completeAlignment;}}
 };
 
 

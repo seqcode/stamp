@@ -136,7 +136,7 @@ public:
 	void BeQuiet(bool q){silence=q;}
 
 	//Destructor
-	~Tree(){if(root!=NULL){PostorderDeleteTree(root);}};
+	virtual ~Tree(){if(root!=NULL){PostorderDeleteTree(root);}};
 };
 
 //UPGMA
