@@ -1231,7 +1231,7 @@ void Tree::PPAAlignment(TreeNode* n, TreeNode* start, int leaveOutID)
 }
 
 //Convert a multiple alignment to a profile
-Motif* Tree::Alignment2Profile(MultiAlignRec* alignment, char* name, int leaveOutID)
+Motif* Tree::Alignment2Profile(MultiAlignRec* alignment, const char* name, int leaveOutID)
 {
 	int z, b, x, i, j;
 	double sum=0;
@@ -1271,7 +1271,7 @@ Motif* Tree::Alignment2Profile(MultiAlignRec* alignment, char* name, int leaveOu
 }
 
 //Convert a multiple alignment to a Sandelin & Wasserman FBP
-Motif* Tree::Alignment2SWFBP(MultiAlignRec* alignment, char* name, int leaveOutID)
+Motif* Tree::Alignment2SWFBP(MultiAlignRec* alignment, const char* name, int leaveOutID)
 {
 	int z, b, x, y, i, j;
 	double sum=0;

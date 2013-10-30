@@ -108,8 +108,8 @@ protected:
 	//IR Multiple alignment code replication
 	void IRAlignment(TreeNode* n, int leaveOutID=-1);
 	//support methods
-    Motif* Alignment2Profile(MultiAlignRec* alignment, char* name, int leaveOutID=-1);
-	Motif* Alignment2SWFBP(MultiAlignRec* alignment, char* name, int leaveOutID=-1);
+	Motif* Alignment2Profile(MultiAlignRec* alignment, const char* name, int leaveOutID=-1);
+	Motif* Alignment2SWFBP(MultiAlignRec* alignment, const char* name, int leaveOutID=-1);
 	MultiAlignRec* SingleProfileSubtraction(MultiAlignRec* alignment, int removeID);
 	MultiAlignRec* SingleProfileAddition(MultiAlignRec* alignment, Motif* two, int twoID);
 

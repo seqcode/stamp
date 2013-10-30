@@ -66,9 +66,9 @@ public:
 	MultiAlignRec* PreAlignedInput(PlatformSupport* p);
 
 	//Convert an alignment to a profile
-	Motif* Alignment2Profile(MultiAlignRec* alignment, char* name);
+	Motif* Alignment2Profile(MultiAlignRec* alignment, const char* name);
 	//Convert a multiple alignment to a Sandelin & Wasserman FBP
-	Motif* Alignment2SWFBP(MultiAlignRec* alignment, char* name);
+	Motif* Alignment2SWFBP(MultiAlignRec* alignment, const char* name);
 
 	//Print the alignment
 	void PrintMultipleAlignmentConsensus(MultiAlignRec* alignment=NULL);

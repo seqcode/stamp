@@ -32,7 +32,7 @@
 #include "MultipleAlignment.h"
 
 //Convert a multiple alignment to a profile
-Motif* MultipleAlignment::Alignment2Profile(MultiAlignRec* alignment, char* name)
+Motif* MultipleAlignment::Alignment2Profile(MultiAlignRec* alignment, const char* name)
 {
 	int z, b, x, i, j;
 	double sum=0;
@@ -70,7 +70,7 @@ Motif* MultipleAlignment::Alignment2Profile(MultiAlignRec* alignment, char* name
 }
 
 //Convert a multiple alignment to a Sandelin & Wasserman FBP
-Motif* MultipleAlignment::Alignment2SWFBP(MultiAlignRec* alignment, char* name)
+Motif* MultipleAlignment::Alignment2SWFBP(MultiAlignRec* alignment, const char* name)
 {
 	int z, b, x, y, i, j;
 	double sum=0;
