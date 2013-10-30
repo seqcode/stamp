@@ -294,7 +294,7 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 		{	if(count[x][y]>0)
 				fprintf(out, "%d\t%d\t%lf\t%lf\t%.0lf\t%lf\t%lf\n", x, y, sum[x][y]/count[x][y], std_dev[x][y], count[x][y], min[x][y], max[x][y]);
 			else
-				fprintf(out, "%d\t%d\t%lf\t%lf\t%.0lf\t%lf\t%lf\n", x, y, 0, 0, 0, 0, 0);
+				fprintf(out, "%d\t%d\t%lf\t%lf\t%.0lf\t%lf\t%lf\n", x, y, 0.0, 0.0, 0.0, 0.0, 0.0);
 		}
 
 	////////////////////////////////////////////////////////
