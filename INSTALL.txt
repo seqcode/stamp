@@ -1,21 +1,31 @@
-=====================================
+====================================
 Installing STAMP: A very quick guide
-=====================================
+====================================
 
 Step 1: Install the GNU Scientific Library.
 	Download from http://www.gnu.org/software/gsl/
-	Add the 'include' and 'lib' directories to your PATH
+	Add the 'include' and 'lib' directories to your PATH.
 
 Step 2: Compile the STAMP code.
 	Use a command such as the following:
-	g++ -O3 -o STAMP Motif.cpp Alignment.cpp ColumnComp.cpp PlatformSupport.cpp PlatformTesting.cpp Tree.cpp NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp ProteinDomains.cpp main.cpp -lgsl -lm
-	Note; if the GSL library is not in the PATH, add the appropriate directories using the -L and -I compiler options.
+
+            g++ -O3 -o stamp Motif.cpp Alignment.cpp ColumnComp.cpp \
+                PlatformSupport.cpp PlatformTesting.cpp Tree.cpp \
+                NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp \
+                ProteinDomains.cpp main.cpp -lm -lgsl -lgslcblas
+
+	Note: if the GSL library is not in the PATH, add the appropriate
+	directories using the -L and -I compiler options.
 
 Step 3: Test it out!
-	
+
 	Run STAMP without arguments to see the various command-line options.
-	
-	NB: When aligning motifs, a score distribution file for the chosen settings must be provided. A selection of files for commonly chosen settings should have come with STAMP in the "ScoreDists" directory. The files are named using the following abbreviations for alignment settings:
+
+	NB: When aligning motifs, a score distribution file for the chosen
+	    settings must be provided. A selection of files for commonly
+	    chosen settings should have come with STAMP in the "ScoreDists"
+	    directory. The files are named using the following abbreviations
+	    for alignment settings:
 		go: gap-open penalty
 		ge: gap-extend penalty
 		SWA: Smith-Waterman Alignment
@@ -26,13 +36,38 @@ Step 3: Test it out!
 		KL: Kullback-Liebler
 		ALLR: Average Log Likelihood Ratio
 		CS: p-value of Chi-square
-	If you want to use settings (e.g gap parameters) that aren't supported by the ScoreDists files, first generate 10000 random motifs using the -genrand setting (I recommend using this with the JASPAR database loaded using -tf), and then use the -genscores option with the desired alignment settings.
-	
-	The file "sample.motifs" contains some test motifs in the format accepted by STAMP. 
+
+	If you want to use settings (e.g gap parameters) that aren't supported
+	by the ScoreDists files, first generate 10000 random motifs using the
+	-genrand setting (I recommend using this with the JASPAR database
+	loaded using -tf), and then use the -genscores option with the desired
+	alignment settings.
+
+	The file "sample.motifs" contains some test motifs in the format
+	accepted by STAMP.
 	
 	Sample command to see if things are working:
-	./STAMP -tf sample.motifs -sd ../ScoreDists/JaspRand_PCC_SWU.scores -cc PCC -align SWU -ma IR -printpairwise -match jaspar.motifs -out outFile
-	The above command runs STAMP with the PCC metric, ungapped local alignment, and iterative refinement multiple alignment. Pairwise scores within the input set are printed. The input motifs are "matched" against JASPAR and the results files all begin with the name "outFile".
-	
 
-Apologies for the brevity of this guide. Please contact me if you run into trouble (mahony@mit.edu).
+            ./stamp -tf sample.motifs \
+                    -sd ../ScoreDists/JaspRand_PCC_SWU.scores \
+                    -cc PCC \
+                    -align SWU \
+                    -ma IR \
+                    -printpairwise \
+                    -match jaspar.motifs \
+                    -out outFile
+
+	The above command runs STAMP with the PCC metric, ungapped local
+	alignment, and iterative refinement multiple alignment. Pairwise
+	scores within the input set are printed. The input motifs are
+	"matched" against JASPAR and the results files all begin with the
+	name "outFile".
+
+
+Apologies for the brevity of this guide.
+Please contact me if you run into trouble.
+
+	email:			mahony@psu.edu
+	Personal website:	http://www.personal.psu.edu/sam77/
+	STAMP website:		http://www.benoslab.pitt.edu/stamp/
+	Download STAMP:		http://www.benoslab.pitt.edu/services.html#downloads
