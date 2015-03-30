@@ -81,6 +81,7 @@ int main (int argc, char *argv[])
 	bool FBP_on = false;
 	bool preAlign=false;
 	bool pairwiseOnly=false;
+	bool forwardAlignOnly=false;
 	bool ungapped=false;
 
 	for(i=1; i<argc; i++){
@@ -151,6 +152,10 @@ int main (int argc, char *argv[])
 		}
 		if((strcmp(argv[i], "-extendoverlap")) ==0){
 			extendOverlap=true; if(!silent && !htmlOutput){printf("Extending the overlapping alignments\n");}
+		}
+		if((strcmp(argv[i], "-forwardonly")) ==0){ //Consider forward alignments only
+			forwardAlignOnly = true;
+			if(!silent && !htmlOutput){printf("Considering forward direction alignments only\n");}
 		}
 		if((strcmp(argv[i], "-printpairwise")) ==0){
 			pairwiseOnly=true; if(!silent && !htmlOutput){printf("Printing pairwise scores only\n");}
@@ -228,16 +233,16 @@ int main (int argc, char *argv[])
 		if((strcmp(argv[i], "-align")) ==0)  //Choose an alignment method
 		{
 			if((strcmp(argv[i+1], "NW"))==0 || (strcmp(argv[i+1], "nw"))==0){
-				ALIGN = new NeedlemanWunsch(CC, gapOpen, gapExtend, overlapAlign, extendOverlap);
+				ALIGN = new NeedlemanWunsch(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 			}
 			if((strcmp(argv[i+1], "SWU"))==0 || (strcmp(argv[i+1], "swu"))==0){
-				ALIGN = new SmithWatermanUngappedExtended(CC); ungapped=true;
+				ALIGN = new SmithWatermanUngappedExtended(CC, forwardAlignOnly); ungapped=true;
 			}
 			if((strcmp(argv[i+1], "SWA"))==0 || (strcmp(argv[i+1], "swa"))==0){
-				ALIGN = new SmithWatermanAffine(CC, gapOpen, gapExtend, overlapAlign, extendOverlap);
+				ALIGN = new SmithWatermanAffine(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 			}
 			if((strcmp(argv[i+1], "SW"))==0 || (strcmp(argv[i+1], "sw"))==0){
-				ALIGN = new SmithWaterman(CC, gapOpen, gapExtend, overlapAlign, extendOverlap);
+				ALIGN = new SmithWaterman(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 			}
 			alignChosen = true;
 		}
@@ -415,6 +420,7 @@ void DisplayHelp()
 	printf("\t-overlapalign\n\t\tOnly allow overlapping alignments\n\t\tMin. length: %d. Default = ON\n", MIN_OVERLAP);
 	printf("\t-nooverlapalign\n\t\tAllow partial (non-overlapping) alignments\n");
 	printf("\t-extendoverlap\n\t\tExtend the edges of the alignments to cover both motifs [Default = OFF]\n");
+	printf("\t-forwardonly\n\t\tConsider forward direction alignments only [Default = OFF]\n");
 	printf("\t-printpairwise\n\t\tOnly print the pairwise scores [Default = OFF]\n");
 	printf("\n\t*** Tree-Building Methods ***\n");
 	printf("\t-tree [method name]\n\t\tTree construction method choice.\n\t\tOptions:\n\t\tUPGMA:\tUnweighted Pair Group Method with Arithmetic Mean [default]\n\t\tSOTA:\tSelf-Organizing Tree Algorithm\n");

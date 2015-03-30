@@ -91,10 +91,11 @@ MultiAlignRec::MultiAlignRec(int nA, int aL)
 }
 
 //Alignment constructor;
-Alignment::Alignment(ColumnComp* c, double gO, double gE, bool overlap, bool extend)
+Alignment::Alignment(ColumnComp* c, double gO, double gE, bool overlap, bool extend, bool forwardonly)
 {
 	gapOpen = gO; 
-	gapExtend = gE; 
+	gapExtend = gE;
+	forwardAlignOnly=forwardonly;
     Metric = c; 
 	this->overlapOnly =  overlap;
 	extendOverlap=extend;
@@ -316,7 +317,7 @@ double SmithWaterman::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int&
 		}
 	}
 
-	if(forScore>revScore){
+	if(forScore>revScore || forwardAlignOnly){
 		forward=true; alignForward=true; maxScore=forScore;
 		start_i = forMaxI; start_j=forMaxJ;
 		currAlignMat = forAlignMat; currMotif = one;
@@ -488,7 +489,7 @@ double SmithWatermanUngappedExtended::AlignMotifs(Motif* one, Motif* two, int &i
 		else{	revScore=maxScore; revMaxI=max_i; revMaxJ=max_j;}
 	}
 
-	if(forScore>revScore){
+	if(forScore>revScore || forwardAlignOnly){
 		forward=true; alignForward=true; maxScore=forScore;
 		start_i = forMaxI; start_j=forMaxJ;
 		currAlignMat = forAlignMat; currMotif = one;
@@ -710,7 +711,7 @@ double NeedlemanWunsch::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, in
 
 	}
 
-	if(forScore>revScore){
+	if(forScore>revScore || forwardAlignOnly){
 		forward=true; alignForward=true; maxScore=forScore;
 		start_i = forMaxI; start_j=forMaxJ;
 		currAlignMat = forAlignMat; currMotif = one;
@@ -881,7 +882,7 @@ double SmithWatermanAffine::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2
 		else{	revScore=maxScore; revMaxI=max_i; revMaxJ=max_j;}
 	}
 
-	if(forScore>revScore){
+	if(forScore>revScore || forwardAlignOnly){
 		forward=true; alignForward=true; maxScore=forScore;
 		start_i = forMaxI; start_j=forMaxJ;
 		currAlignMat = forAlignMat; currMotif = one;

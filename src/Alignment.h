@@ -133,6 +133,7 @@ protected:
 	ColumnComp* Metric;
 	bool overlapOnly;
 	bool extendOverlap;
+	bool forwardAlignOnly;
 	int** alignSectionTmp;
 
 	//Helper methods
@@ -143,7 +144,8 @@ public:
 	int** alignSection;
 
 	//Constructor
-	Alignment(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap = false, bool extend=false);
+	Alignment(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap = false, bool extend=false, bool forwardonly=false);
+
 
 	//Accessors
 	int GetAlignLen(){return alignLen;}
@@ -173,7 +175,7 @@ class SmithWaterman : public Alignment
 {
 public:
 	//Constructor
-	SmithWaterman(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=false, bool extend=false):Alignment(c, gO, gE, overlap, extend){}
+	SmithWaterman(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=false, bool extend=false, bool forwardonly=false):Alignment(c, gO, gE, overlap, extend, forwardonly){}
 
 	//Alignment implementation
 	double AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int& alignL, bool& forward);
@@ -187,7 +189,7 @@ class SmithWatermanAffine : public Alignment
 {
 public:
 	//Constructor
-	SmithWatermanAffine(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=false, bool extend=false):Alignment(c, gO, gE, overlap, extend){}
+	SmithWatermanAffine(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=false, bool extend=false, bool forwardonly=false):Alignment(c, gO, gE, overlap, extend, forwardonly){}
 
 	//Alignment implementation
 	double AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int& alignL, bool& forward);
@@ -201,7 +203,7 @@ class NeedlemanWunsch : public Alignment
 {
 public:
 	//Constructor
-	NeedlemanWunsch(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=true, bool extend=false):Alignment(c, gO, gE, true, false){}
+	NeedlemanWunsch(ColumnComp* c, double gO = DFLT_GAP_OPEN, double gE = DFLT_GAP_EXTEND, bool overlap=true, bool extend=false, bool forwardonly=false):Alignment(c, gO, gE, true, false, forwardonly){}
 
 	//Alignment implementation
 	double AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int& alignL, bool& forward);
@@ -215,7 +217,7 @@ class SmithWatermanUngappedExtended : public Alignment
 {
 public:
 	//Constructor
-	SmithWatermanUngappedExtended(ColumnComp* c):Alignment(c, 0, 0, false, true){}
+	SmithWatermanUngappedExtended(ColumnComp* c, bool forwardonly=false):Alignment(c, 0, 0, false, true, forwardonly){}
 
 	//Alignment implementation
 	double AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int& alignL, bool& forward);
