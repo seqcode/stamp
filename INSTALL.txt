@@ -64,10 +64,25 @@ Step 3: Test it out!
 	name "outFile".
 
 
-Apologies for the brevity of this guide.
+Formatting motifs for STAMP:
+	You can see the format used by STAMP in the file "sample.motifs".
+	The format used by STAMP is derived from the format used by the
+	TransFac database. To convert other formats into STAMP's format,
+	you can use the formatMotifs.pl script as follows:
+
+	    perl formatMotifs.pl inputFile outputFile
+
+	Note that converted motifs will be *appended* to outputFile, not
+	overwritten. Various input formats are detected and converted by
+	the formatMotifs.pl script. See the list of input formats here:
+
+	    http://www.benoslab.pitt.edu/stamp/help.html#input
+
+
 Please contact me if you run into trouble.
 
 	email:			mahony@psu.edu
-	Personal website:	http://www.personal.psu.edu/sam77/
+	Personal website:	http://mahonylab.org/
 	STAMP website:		http://www.benoslab.pitt.edu/stamp/
 	Download STAMP:		http://www.benoslab.pitt.edu/services.html#downloads
+				or https://github.com/shaunmahony/stamp
