@@ -336,7 +336,7 @@ void UPGMA::BuildTree(PlatformSupport* p, bool treeTest)
 						for(tmpA=nodes[j]->progeny; tmpA!=NULL; tmpA=tmpA->next){count++;
 							for(tmpB=nodes[j]->progeny; tmpB!=NULL; tmpB=tmpB->next)
 								if(tmpA->mID!=tmpB->mID)
-								{	currCount++; currE+=pairwiseAlign[tmpA->mID][tmpB->mID].dist;//*pairwiseAlign[tmpB->mID][tmpA->mID].dist;
+								{	currCount++; currE+=pairwiseAlign[tmpA->mID][tmpB->mID].dist;
 								}
 						}
 					}
