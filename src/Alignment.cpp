@@ -176,7 +176,7 @@ void Alignment::PrintAlignmentConsensus(Motif* one, Motif* two)
 //Do two sweeps of the alignment method and return the best results. 
 double Alignment::AlignMotifs2D(Motif* one, Motif* two, int &i1, int &i2, int& alignL, bool& forward1, bool& forward2)
 {
-	double score1, score2, bestScore=0;
+	double score1=0, score2=0, bestScore=0;
 	int i1_A, i2_A, i1_B, i2_B;
 	int aL_A, aL_B; 
 	bool for_A, for_B;
@@ -193,9 +193,11 @@ double Alignment::AlignMotifs2D(Motif* one, Motif* two, int &i1, int &i2, int& a
 		alignSectionTmp[0][i] = alignSection[0][i];
 		alignSectionTmp[1][i] = alignSection[1][i];
 	}
-	//Send both motifs in reverse direction (takes care of both reversed and "two" reversed)
-	score2 = AlignMotifs(revOne, revTwo, i1_B, i2_B, aL_B, for_B);
-	if(score1>score2){
+	if(!forwardAlignOnly){
+		//Send both motifs in reverse direction (takes care of both reversed and "two" reversed)
+		score2 = AlignMotifs(revOne, revTwo, i1_B, i2_B, aL_B, for_B);
+	}
+	if(forwardAlignOnly || score1>score2){
 		i1 = i1_A;
 		i2 = i2_A;
 		for(int i=0; i<aL_A; i++){
