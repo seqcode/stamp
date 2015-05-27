@@ -8,7 +8,7 @@
 //
 // Started: 6th Dec 2005
 //
-// Copyright 2007 Shaun Mahony
+// Copyright 2007-2015 Shaun Mahony
 //
 // This file is part of STAMP.
 //

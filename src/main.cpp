@@ -1,14 +1,15 @@
 //////////////////////////////////////////////////////////////////////////////////
 //
-// STAMP version 1
+// STAMP version 1.2
 //
 // Written By: Shaun Mahony
+// Bug fixes by: Gert Hulselmans
 //
 // main.cpp
 //
 // Started: 31st Oct 2005
 //
-// Copyright 2007 Shaun Mahony
+// Copyright 2007-2015 Shaun Mahony
 //
 // This file is part of STAMP.
 //
@@ -92,7 +93,7 @@ int main (int argc, char *argv[])
 	}
 
 	//Welcome message
-	if(!silent && !htmlOutput){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Computational Biology\n\tUniversity of Pittsburgh\n\tVersion 1.0 (Winter 2006)\n\n");}
+	if(!silent && !htmlOutput){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Biochemistry & Molecular Biology\n\tPenn State University\n\tVersion 1.2 (May 2015)\n\n");}
 
 	if(argc ==1) //First and Foremost, the help option
 	{	DisplayHelp();

@@ -11,7 +11,7 @@ See INSTALL.txt for compilation and testing instructions.
 
 ###########################################################
 Version history:
-	v.1.2: 2015-03-30	
+	v.1.2: 2015-05-27
 	      This version includes bug fixes and updated compilation instructons that Gert Hulselmans (KU Leuven) performed in 
 	      Oct 2013. We're very grateful to Gert for getting this code working again. This version also includes a new option 
 	      for restricting motif comparisons to a single strand (e.g. for comparing RNA-binding motifs). 

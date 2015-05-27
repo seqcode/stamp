@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 //
-// STAMP version 1 
+// STAMP version 1.2
 //
 // Written By: Shaun Mahony
 //
@@ -8,7 +8,7 @@
 //
 // Started: 14th Feb 2006
 //
-// Copyright 2007 Shaun Mahony
+// Copyright 2007-2015 Shaun Mahony
 //
 // This file is part of STAMP.
 //
