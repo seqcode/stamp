@@ -263,7 +263,7 @@ int main (int argc, char *argv[])
 		}
 	}
 	if(!alignChosen)
-	{	ALIGN = new SmithWatermanAffine(CC, gapOpen, gapExtend, overlapAlign, extendOverlap);
+	{	ALIGN = new SmithWatermanAffine(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 	}
 	if(!maChosen)
 		MA = new ProgressiveProfileAlignment(outFileName, htmlOutput);
