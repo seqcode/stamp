@@ -103,8 +103,8 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 	char tag[STR_LEN];
 	Motif* tmp_Motif = new Motif(MAX_MOTIF_LEN);
 	int curr_cnt=0;
+	bool has_DE_tag = false;
 	double curr_ttl;
-	bool recording=false;
 	double tmpWeight=0;
 	Motif** currMotifs; int currCnt;
 
@@ -131,32 +131,27 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 	inp = fopen(fn, "r");
 	if(inp==NULL){perror("Cannot open input file");exit(1);}
 	while(fgets(line, LONG_STR, inp)){
-		//Read the first word. 3 cases handled at the moment
+		//Read the first word.
 		sscanf(line, " %s", tag);
 
-		if(strcmp(tag, "DE")==0)
-		{
-			if(famNames)
-			{	sscanf(line, " %s %s %s", tag, tmp_Motif->name, tmp_Motif->famName);
-			}else if(useweighting){
-				sscanf(line, " %s %s %lf", tag, tmp_Motif->name, &tmpWeight);
-				tmp_Motif->weighting=tmpWeight;
-				total_weight+=tmp_Motif->weighting;
-			}else{
-				sscanf(line, " %s %s", tag, tmp_Motif->name);
-			}
-			curr_cnt=0;
-			recording=true;
-		}else if(strcmp(tag, "XX")==0){
-			if(recording){ //copy the contents of tmp_Motif to a new spot in currMotifs
+		if(strlen(tag) >= 1 && (tag[0] >= 0x30 && tag[0] <= 0x39)){
+			//Assume it is a matrix line as the tag starts with a number.
+			sscanf(line, " %s %lf %lf %lf %lf", tag, &tmp_Motif->n[curr_cnt][0], &tmp_Motif->n[curr_cnt][1], &tmp_Motif->n[curr_cnt][2], &tmp_Motif->n[curr_cnt][3]);
+			curr_cnt++;
+
+			//Reset has_DE_tag for the next motif.
+			has_DE_tag = false;
+		}else{
+			//Copy the contents of tmp_Motif to a new spot in currMotifs, when the last matrix line is read.
+			if(curr_cnt != 0){
 				currMotifs[currCnt] = new Motif(curr_cnt);
 				if(useweighting)
 					currMotifs[currCnt]->weighting=tmp_Motif->weighting;
 				strcpy(currMotifs[currCnt]->name, tmp_Motif->name);
 				if(famNames)
 					strcpy(currMotifs[currCnt]->famName, tmp_Motif->famName);
-				for(i=0; i<curr_cnt; i++){
-					curr_ttl=0;
+				for(i=0; i < curr_cnt; i++){
+					curr_ttl = 0;
 					for(j=0; j<B; j++)
 					{	currMotifs[currCnt]->n[i][j] = tmp_Motif->n[i][j];
 						curr_ttl+=tmp_Motif->n[i][j];
@@ -167,14 +162,59 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 					}
 				}
 				currCnt++;
-
-				recording=false;
+				curr_cnt = 0;
 			}
-		}else { //Assuming it's an integer value here!
-			sscanf(line, " %s %lf %lf %lf %lf", tag, &tmp_Motif->n[curr_cnt][0], &tmp_Motif->n[curr_cnt][1], &tmp_Motif->n[curr_cnt][2], &tmp_Motif->n[curr_cnt][3]);
-			curr_cnt++;
+
+			if(strcmp(tag, "AC") == 0 || strcmp(tag, "ID") == 0)
+			{
+				// Set motif name if no DE tag was seen yet.
+				if (has_DE_tag == false) {
+					sscanf(line, " %s %s", tag, tmp_Motif->name);
+					curr_cnt = 0;
+				}
+			}
+
+			if(strcmp(tag, "DE") == 0)
+			{
+				if(famNames)
+				{
+					sscanf(line, " %s %s %s", tag, tmp_Motif->name, tmp_Motif->famName);
+				}else if(useweighting){
+					sscanf(line, " %s %s %lf", tag, tmp_Motif->name, &tmpWeight);
+					tmp_Motif->weighting=tmpWeight;
+					total_weight += tmp_Motif->weighting;
+				}else{
+					sscanf(line, " %s %s", tag, tmp_Motif->name);
+				}
+				curr_cnt = 0;
+				has_DE_tag = true;
+			}
 		}
 	}
+
+	//Copy the contents of the last tmp_Motif to a new spot in currMotifs, if this was not done yet
+	if(curr_cnt != 0){
+		currMotifs[currCnt] = new Motif(curr_cnt);
+		if(useweighting)
+			currMotifs[currCnt]->weighting=tmp_Motif->weighting;
+		strcpy(currMotifs[currCnt]->name, tmp_Motif->name);
+		if(famNames)
+			strcpy(currMotifs[currCnt]->famName, tmp_Motif->famName);
+		for(i=0; i<curr_cnt; i++){
+			curr_ttl = 0;
+			for(j=0; j < B; j++)
+			{	currMotifs[currCnt]->n[i][j] = tmp_Motif->n[i][j];
+				curr_ttl += tmp_Motif->n[i][j];
+			}
+			for(j=0; j < B; j++)
+			{	currMotifs[currCnt]->f[i][j] = (tmp_Motif->n[i][j] + (SCALE_FACTOR*markov[1][j]))/(curr_ttl+SCALE_FACTOR);
+				currMotifs[currCnt]->pwm[i][j] = log_2(currMotifs[currCnt]->f[i][j]/markov[1][j]);
+			}
+		}
+		currCnt++;
+		curr_cnt = 0;
+	}
+
 	delete tmp_Motif;
 
 	if(input)
