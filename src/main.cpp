@@ -48,7 +48,7 @@ int main (int argc, char *argv[])
 {
 	int i;
 	PlatformSupport* Plat = new PlatformSupport();
-    ColumnComp* CC;
+	ColumnComp* CC;
 	Alignment* ALIGN;
 	Tree* T;
 	MultipleAlignment* MA;
@@ -56,7 +56,7 @@ int main (int argc, char *argv[])
 	MultiAlignRec* pssmAlignment;
 	char outFileName[STR_LEN];
 	strcpy(outFileName, "out");
-    bool colChosen=false, alignChosen=false, treeChosen=false, maChosen=false, usingDomains=false, inputProvided=false, scoresProvided=false;
+	bool colChosen=false, alignChosen=false, treeChosen=false, maChosen=false, usingDomains=false, inputProvided=false, scoresProvided=false;
 	bool neuralTree=false; bool testing=false;bool testingAcc=false; bool testingTree=false; bool famNames=false; bool treeClusts=false; bool printTreeClusts=false;
 	bool ma_off=false;
 	bool tree_loocv=false;//true;

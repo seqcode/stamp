@@ -65,4 +65,4 @@ public:
 	void PairwisePredictionAccuracy(PlatformSupport* PS);
 };
 
-#endif 
+#endif

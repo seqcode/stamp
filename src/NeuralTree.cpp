@@ -36,7 +36,7 @@
 void SOTA::PreOrderBuildNodes(TreeNode* curr)
 {
 	int j;
-	Child* c; 
+	Child* c;
 	//Start with a node... split it if there are more than one children in the current parent
 	if(curr->members==2){
 		SplitNode(curr);
@@ -52,7 +52,7 @@ void SOTA::PreOrderBuildNodes(TreeNode* curr)
 		PreOrderBuildNodes(curr->right);
 	}else if(curr->members>1 && CalcAvgIntPairwise(curr)<intSimThres){
 		SplitNode(curr);
-        //Parent now split... train the new leaves
+		//Parent now split... train the new leaves
 		int z,b;
 		double winningScore=0, winningPVal=0, lowestIntSim, lastNLNZ=0;
 		TreeNode* winner=NULL;
@@ -76,7 +76,7 @@ void SOTA::PreOrderBuildNodes(TreeNode* curr)
 					winner->alignment = new MultiAlignRec(1, motifSet[c->mID]->GetLen());
 					strcpy(winner->alignment->alignedNames[0], motifSet[c->mID]->name);
 					strcpy(winner->alignment->profileAlignment[0]->name, motifSet[c->mID]->name);
-					winner->alignment->alignedIDs[0] = c->mID; 
+					winner->alignment->alignedIDs[0] = c->mID;
 					winner->members=1;
 					winner->avgPval=winningPVal;
 					//initialise the alignment
@@ -93,9 +93,9 @@ void SOTA::PreOrderBuildNodes(TreeNode* curr)
 			//Adjust the models (Neighbourhood update)
 			InorderAdjustModels(curr);
 			t++;
-			total_t++;	
+			total_t++;
 		}while(t<CYCLE_MAX && total_t<MAX_T);
-		
+
 		//Add the children to each leaf
 		for(j=0; j<curr->left->members; j++){
 			Child* tmp=new Child();
@@ -132,13 +132,13 @@ void SOTA::BuildTree(PlatformSupport* p, bool treeTest)
 	Plat = p;
 	treeTesting=treeTest;
 	numMotifs = Plat->GetMatCount();
-	motifSet = Plat->inputMotifs; 
+	motifSet = Plat->inputMotifs;
 	pairwiseAlign = Plat->pairwiseAlign;
 	numLeavesNonZero=1;
 
 	InitialiseTree(motifSet, numMotifs);
 
-	PreOrderBuildNodes(root);	
+	PreOrderBuildNodes(root);
 
 	//Prune Here
 	PostorderPrune(root);
@@ -168,7 +168,7 @@ void SOTA::BuildTree(PlatformSupport* p, bool treeTest)
 void NeuralTree::InorderReset(TreeNode* n)
 {
 	if(n->left != NULL) InorderReset(n->left);
-	
+
 	if(n->leaf){
 		if(n->alignment!=NULL)
 			delete n->alignment;
@@ -184,10 +184,10 @@ void NeuralTree::InorderReset(TreeNode* n)
 void NeuralTree::InorderNameLeaves(TreeNode* n)
 {
 	if(n->left != NULL) InorderNameLeaves(n->left);
-	
+
 	if(n->leaf){
 		if(n->alignment!=NULL && n->alignment->GetNumAligned()==1){
-            strcpy(n->profile->name, n->alignment->alignedNames[0]);
+			strcpy(n->profile->name, n->alignment->alignedNames[0]);
 		}
 	}
 
@@ -257,9 +257,9 @@ void NeuralTree::InorderFindMostSimilarClusters(TreeNode* curr, double& highestS
 {
 	if(curr->left != NULL){ InorderFindMostSimilarClusters(curr->left, highestSim);}
 	if(curr->leaf)
-	{	
+	{
 		if(curr->members>1){
-			double currSim=0; 
+			double currSim=0;
 			InorderFindClusterNeighbour(root, curr, currSim);
 			if(currSim >highestSim){
 				highestSim=currSim;
@@ -274,7 +274,7 @@ void NeuralTree::InorderFindClusterNeighbour(TreeNode* subgraph,TreeNode* curr, 
 
 	if(subgraph->left != NULL){ InorderFindClusterNeighbour(subgraph->left, curr, highestSim);}
 	if(subgraph->leaf)
-	{	
+	{
 		if(subgraph->members>1 && curr->nodeID!=subgraph->nodeID){
 			double aScore = Aman->AlignMotifs2D(curr->profile, subgraph->profile, i1, i2, aL, forward1, forward2);
 			double currScore = Plat->Score2PVal(curr->profile->len,subgraph->profile->len, aScore);
@@ -371,16 +371,16 @@ void NeuralTree::InorderAdjustModels(TreeNode* curr)
 	if(curr->left != NULL) InorderAdjustModels(curr->left);
 	if(curr->leaf){
 		char tmpName[STR_LEN];
-					
+
 		//Step 1: make a new alignment and copy in the last profile and the new alignment profile (if any)
 		MultiAlignRec* tmpAlign = new MultiAlignRec(1, curr->profile->GetLen());
 		strcpy(tmpAlign->alignedNames[0], "Temp0");
 		strcpy(tmpAlign->profileAlignment[0]->name, "Temp0");
-		tmpAlign->alignedIDs[0] = 0; 
+		tmpAlign->alignedIDs[0] = 0;
 		for(z=0; z<curr->profile->GetLen(); z++)
 			for(b=0; b<B; b++)
 				tmpAlign->profileAlignment[0]->f[z][b]=curr->profile->f[z][b];
-		
+
 		if(curr->members>0){
 			for(x=0; x<curr->members; x++)
 				tmpAlign = MAman->SingleProfileAddition(tmpAlign, Plat->inputMotifs[curr->alignment->alignedIDs[x]], 1);
@@ -426,7 +426,7 @@ void NeuralTree::InorderAdjustModels(TreeNode* curr)
 			}for(b=0; b<B; b++){
 				newProfile->f[z][b]=newProfile->f[z][b]/tot;
 			}
-		}	
+		}
 
 		//Trim the edges of the current motif
 		int c_start_offset=0, c_stop_offset=0;
@@ -479,7 +479,7 @@ void NeuralTree::InitialiseTree(Motif** motifSet, int numMotifs)
 	root->alignment = new MultiAlignRec(1, Plat->inputMotifs[0]->GetLen());
 	strcpy(root->alignment->alignedNames[0], Plat->inputMotifs[0]->GetName());
 	strcpy(root->alignment->profileAlignment[0]->name, Plat->inputMotifs[0]->GetName());
-	root->alignment->alignedIDs[0] = 0; 
+	root->alignment->alignedIDs[0] = 0;
 	for(int z=0; z<Plat->inputMotifs[0]->GetLen(); z++)
 		for(int b=0; b<B; b++)
 			root->alignment->profileAlignment[0]->f[z][b]=Plat->inputMotifs[0]->f[z][b];
@@ -512,14 +512,14 @@ void NeuralTree::SplitNode(TreeNode* n)
 	n->left->members=0;
 	n->right->members=0;
 	double colTot;
-	
+
 	if(n->members==2){//Give it a helping hand...
 		Child* C1 = n->progeny;
 		Child* C2 = C1->next;
 		n->left->profile = new Motif(Plat->inputMotifs[C1->mID]->GetLen());
 		strcpy(n->left->profile->name, tmpName1);
 		n->right->profile = new Motif(Plat->inputMotifs[C2->mID]->GetLen());
-		strcpy(n->right->profile->name, tmpName2);	
+		strcpy(n->right->profile->name, tmpName2);
 		for(i=0; i<Plat->inputMotifs[C1->mID]->GetLen(); i++){
 			for(j=0; j<B; j++){
 				n->left->profile->f[i][j] = Plat->inputMotifs[C1->mID]->f[i][j];
@@ -537,18 +537,18 @@ void NeuralTree::SplitNode(TreeNode* n)
 		strcpy(n->left->profile->name, Plat->inputMotifs[C1->mID]->GetName());
 		strcpy(n->right->profile->name, Plat->inputMotifs[C2->mID]->GetName());
 	}else{
-		
+
 		n->left->alignment = new MultiAlignRec(1, Plat->inputMotifs[n->alignment->alignedIDs[0]]->GetLen());
 		strcpy(n->left->alignment->alignedNames[0], Plat->inputMotifs[n->alignment->alignedIDs[0]]->GetName());
 		strcpy(n->left->alignment->profileAlignment[0]->name, Plat->inputMotifs[n->alignment->alignedIDs[0]]->GetName());
-		n->left->alignment->alignedIDs[0] = n->alignment->alignedIDs[0]; 
+		n->left->alignment->alignedIDs[0] = n->alignment->alignedIDs[0];
 		for(z=0; z<Plat->inputMotifs[n->alignment->alignedIDs[0]]->GetLen(); z++)
 			for(b=0; b<B; b++)
 				n->left->alignment->profileAlignment[0]->f[z][b]=Plat->inputMotifs[n->alignment->alignedIDs[0]]->f[z][b];
 		n->right->alignment = new MultiAlignRec(1, Plat->inputMotifs[n->alignment->alignedIDs[1]]->GetLen());
 		strcpy(n->right->alignment->alignedNames[0], Plat->inputMotifs[n->alignment->alignedIDs[1]]->GetName());
 		strcpy(n->right->alignment->profileAlignment[0]->name, Plat->inputMotifs[n->alignment->alignedIDs[1]]->GetName());
-		n->right->alignment->alignedIDs[0] = n->alignment->alignedIDs[1]; 
+		n->right->alignment->alignedIDs[0] = n->alignment->alignedIDs[1];
 		for(z=0; z<Plat->inputMotifs[n->alignment->alignedIDs[1]]->GetLen(); z++)
 			for(b=0; b<B; b++)
 				n->right->alignment->profileAlignment[0]->f[z][b]=Plat->inputMotifs[n->alignment->alignedIDs[1]]->f[z][b];
@@ -559,7 +559,7 @@ void NeuralTree::SplitNode(TreeNode* n)
 				n->right->alignment = MAman->SingleProfileAddition(n->right->alignment, Plat->inputMotifs[n->alignment->alignedIDs[i]], n->alignment->alignedIDs[i]);
 			}
 		}
-		
+
 		n->left->profile=MAman->Alignment2Profile(n->left->alignment, tmpName1);
 		n->right->profile=MAman->Alignment2Profile(n->right->alignment, tmpName2);
 		delete n->left->alignment; n->left->alignment=NULL;
@@ -585,7 +585,7 @@ void NeuralTree::SplitNode(TreeNode* n)
 void NeuralTree::PostorderPrune(TreeNode* n)
 {
 	int i, k;
-	
+
 	if(n->left != NULL) PostorderPrune(n->left);
 	if(n->right != NULL) PostorderPrune(n->right);
 	if(n->leaf && n->members==0){
@@ -606,21 +606,21 @@ void NeuralTree::PostorderPrune(TreeNode* n)
 			n->parent->avgPval = n->sibling->avgPval;
 			strcpy(n->parent->profile->name, n->sibling->profile->name);
 			n->parent->members = n->sibling->members;
-			
+
 			//copy alignment here
 			if(n->parent->alignment!=NULL)
-				delete n->parent->alignment;		
+				delete n->parent->alignment;
 			n->parent->alignment = new MultiAlignRec(n->sibling->alignment->GetNumAligned(), n->sibling->alignment->GetAlignL());
 			for(int x=0; x<n->sibling->alignment->GetNumAligned(); x++){
 				strcpy(n->parent->alignment->alignedNames[x], n->sibling->alignment->alignedNames[x]);
 				strcpy(n->parent->alignment->profileAlignment[x]->name, n->sibling->alignment->profileAlignment[x]->name);
-				n->parent->alignment->alignedIDs[x] = n->sibling->alignment->alignedIDs[x]; 
+				n->parent->alignment->alignedIDs[x] = n->sibling->alignment->alignedIDs[x];
 				for(int y=0; y<n->sibling->alignment->GetAlignL(); y++)
 					for(k=0; k<B; k++)
 						n->parent->alignment->profileAlignment[x]->f[y][k]=n->sibling->alignment->profileAlignment[x]->f[y][k];
 			}
 
-			
+
 			n->parent->left = n->sibling->left;
 			n->parent->right = n->sibling->right;
 			if(n->sibling->left!=NULL)
@@ -655,13 +655,13 @@ void TopDownHClust::BuildTree(PlatformSupport* p, bool treeTest)
 	Plat = p;
 	treeTesting=treeTest;
 	numMotifs = Plat->GetMatCount();
-	motifSet = Plat->inputMotifs; 
+	motifSet = Plat->inputMotifs;
 	pairwiseAlign = Plat->pairwiseAlign;
 	numLeavesNonZero=1;
 
 	InitialiseTree(motifSet, numMotifs);
 
-	BuildNodes(root);	
+	BuildNodes(root);
 
 	//Prune Here
 	PostorderPrune(root);
@@ -691,7 +691,7 @@ void TopDownHClust::BuildTree(PlatformSupport* p, bool treeTest)
 void TopDownHClust::BuildNodes(TreeNode* curr)
 {
 	int j;
-	Child* c; 
+	Child* c;
 	int z,b;
 	double winningScore=0, winningPVal=0, lowestIntSim, lastNLNZ=0;
 	TreeNode* winner=NULL;
@@ -700,9 +700,9 @@ void TopDownHClust::BuildNodes(TreeNode* curr)
 	int mi1, mi2; double pS; bool mforward1, mforward2;
 printf("Building TDHC\n");
 	t=0;
-	//Starts with a single node... split it 
+	//Starts with a single node... split it
 	SplitNode(root);
-	
+
 	while(numLeaves<numMotifs){printf("***%d Leaves\n", numLeaves);
 		t=0;
 		//Do CYCLE_MAX times
@@ -721,7 +721,7 @@ printf("Building TDHC\n");
 					winner->alignment = new MultiAlignRec(1, motifSet[x]->GetLen());
 					strcpy(winner->alignment->alignedNames[0], motifSet[x]->name);
 					strcpy(winner->alignment->profileAlignment[0]->name, motifSet[x]->name);
-					winner->alignment->alignedIDs[0] = x; 
+					winner->alignment->alignedIDs[0] = x;
 					winner->members=1;
 					winner->avgPval=winningPVal;
 					//initialise the alignment
@@ -743,10 +743,10 @@ printf("Building TDHC\n");
 			//Update nodes based on current contents
 			InorderAdjustModels(root);
 			t++;
-			total_t++;	
+			total_t++;
 		}while(t<CYCLE_MAX && total_t<MAX_T);
-       
-			
+
+
 		//Calculate (& print) internal homogeneities
 		numLeavesNonZero=0;lowestIntSim = 10000;
 		InorderCalcIntSim(root, numLeavesNonZero, lowestIntSim, lowSimNode);
@@ -754,12 +754,12 @@ printf("Building TDHC\n");
 		double totalH=0;
 		InorderCalcIntHomogeneity(root, totalH); totalH=totalH/numLeavesNonZero;
 		printf("Family-level Homogeneity: %lf\n", totalH);
-		
+
 		//Calculate (& print) inter-cluster distances
 		double highestSim=0;
 		InorderFindMostSimilarClusters(root, highestSim);
 		printf("Maximum inter-cluster distance: %lf\n", highestSim);
-		
+
 		//Split the node with the lowest homogeneity
 		TreeNode* node2Split=NULL;double lowestIntPSim =10000;printf("Nodes:\t");
 		InorderFindNodeToSplit(root, lowestIntPSim, node2Split);
@@ -767,10 +767,10 @@ printf("Building TDHC\n");
 		SplitNode(node2Split);
 
 	}
-  
+
 }
 
-//Adjust the profiles 
+//Adjust the profiles
 void TopDownHClust::InorderAdjustModels(TreeNode* curr)
 {
 	int z, b, l, x;
@@ -779,21 +779,21 @@ void TopDownHClust::InorderAdjustModels(TreeNode* curr)
 	if(curr->left != NULL) InorderAdjustModels(curr->left);
 	if(curr->leaf){
 		char tmpName[STR_LEN];
-					
+
 		//Step 1: make a new alignment and copy in the last profile and the new alignment profile (if any)
 		MultiAlignRec* tmpAlign = new MultiAlignRec(1, curr->profile->GetLen());//printf("Here%d_%d\n", tmpAlign->GetAlignL(),tmpAlign->GetNumAligned());
 		strcpy(tmpAlign->alignedNames[0], "Temp0");
 		strcpy(tmpAlign->profileAlignment[0]->name, "Temp0");
-		tmpAlign->alignedIDs[0] = 0; 
+		tmpAlign->alignedIDs[0] = 0;
 		for(z=0; z<curr->profile->GetLen(); z++)
 			for(b=0; b<B; b++)
 				tmpAlign->profileAlignment[0]->f[z][b]=curr->profile->f[z][b];
-		
+
 		if(curr->members>0){
 			for(x=0; x<curr->members; x++)
 				tmpAlign = MAman->SingleProfileAddition(tmpAlign, Plat->inputMotifs[curr->alignment->alignedIDs[x]], 1);
 		}
-		
+
 		//Make the new weighted profile
 		Motif* newProfile = new Motif(tmpAlign->GetAlignL());
 		newProfile->members=0;
@@ -826,7 +826,7 @@ void TopDownHClust::InorderAdjustModels(TreeNode* curr)
 			}for(b=0; b<B; b++){
 				newProfile->f[z][b]=newProfile->f[z][b]/tot;
 			}
-		}	
+		}
 
 		//Trim the edges of the current motif
 		int c_start_offset=0, c_stop_offset=0;

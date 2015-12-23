@@ -122,4 +122,4 @@ public:
 	~PlatformSupport();
 };
 
-#endif 
+#endif

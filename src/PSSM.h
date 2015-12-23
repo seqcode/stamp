@@ -47,10 +47,10 @@ public:
 
 	//Reverse-complement a PSSM
 	void RevCompPSSM(PSSM* out);
-	
+
 	//Consensus letter for a column
 	char ColConsensus(int i);
-	
+
 	//Destructor
 	~PSSM();
 };

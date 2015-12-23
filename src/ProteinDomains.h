@@ -46,7 +46,7 @@ class ProteinMotif
 {
 private:
 	int len;
-    
+
 public:
 	char name[STR_LEN];
 	double** f;
@@ -66,7 +66,7 @@ public:
 	double log_2(double x){ return(log(x) / LOG_2);}
 
 	//Destructor
-    ~ProteinMotif();
+	~ProteinMotif();
 };
 
 //Protein Domain Handler
@@ -75,7 +75,7 @@ class ProteinDomains
 private:
 	int numDomains;
 	char inputFN[STR_LEN];
-	
+
 public:
 	//The overall and single motifs
 	ProteinMotif* domainMotif;
@@ -89,7 +89,7 @@ public:
 
 	//Do the mutual information analysis
 	void MutualInformation(MultiAlignRec* pssmAlignment, Motif* alignmentMotif, Motif** inputMotifs, int numMotifs);
-		
+
 	//Convert an amino acid to a number
 	int char2num(char x);
 	//log base 2

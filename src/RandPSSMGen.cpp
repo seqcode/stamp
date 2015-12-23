@@ -78,7 +78,7 @@ void RandPSSMGen::RunGenerator()
 
 	//Read in the matrices
 	printf("%d Matrices Read In\n", numMatrices);
-	
+
 	//1) The first step is to read in the width distribution
 	width_hist = gsl_histogram_alloc(7); //7 places in the histogram
 	double width_range[8] = {3, 5, 8, 10, 12, 14, 16, 25};
@@ -94,11 +94,11 @@ void RandPSSMGen::RunGenerator()
 	gsl_histogram_set_ranges(depth_hist, depth_range, 8);
 	for(i=0; i<numMatrices; i++) {//Go through each matrix, adding each column depth to histogram
 		for(j=0; j<matrices[i]->len; j++){
-			double sum=0;	
+			double sum=0;
 			for(k=0; k<B; k++){
 				sum += matrices[i]->n[j][k];
 			}
-            gsl_histogram_increment(depth_hist, sum);
+			gsl_histogram_increment(depth_hist, sum);
 		}
 	}
 	depth_pdf = gsl_histogram_pdf_alloc(7);
@@ -154,7 +154,7 @@ void RandPSSMGen::RunGenerator()
 		third_inner_hist[i] = gsl_histogram_alloc(5);
 		gsl_histogram_set_ranges_uniform(third_inner_hist[i], 0.0001, 0.99999);
 	}
-	
+
 	for(i=0; i<numMatrices; i++) {
 		curr_len = matrices[i]->len;
 		for(j=0; j<curr_len; j++){
@@ -245,11 +245,11 @@ void RandPSSMGen::RunGenerator()
 				edge=true;
 			else
 				edge=false;
-			//Is the column variable? 
+			//Is the column variable?
 			r=((double)rand())/RAND_MAX;
 			c = WhatColumn(i, curr_len);
 			if(r<invariant_prob[c]) { //The column has been chosen as invariant
-				//Which base is invariant? 
+				//Which base is invariant?
 				r = ((double)rand())/RAND_MAX;
 				if(r<0.285){base=0;}
 				else if(r<0.57){base=3;}
@@ -332,7 +332,7 @@ void RandPSSMGen::RunGenerator()
 						newPSSM->f[i][fourth]=1-sum;
 					}
 				}
-			}	
+			}
 			Invariant(newPSSM->f[i], zeros);
 			new_total+=4; new_zeros+=zeros;
 		}
@@ -355,7 +355,7 @@ void RandPSSMGen::RunGenerator()
 		}
 		fprintf(out, "XX\n");
 	}
-printf("New Zeros: %lf\n", new_zeros/new_total);
+	printf("New Zeros: %lf\n", new_zeros/new_total);
 	/////////////////// Memory cleaning area ///////////////////////////////////////////////////////////////////
 	delete newPSSM;
 	gsl_histogram_free(width_hist);
@@ -376,7 +376,7 @@ printf("New Zeros: %lf\n", new_zeros/new_total);
 		gsl_histogram_free(third_inner_hist[i]);
 		gsl_histogram_pdf_free(third_inner_pdf[i]);
 	}
-	fclose(out);		
+	fclose(out);
 
 }
 
@@ -397,7 +397,7 @@ bool RandPSSMGen::Invariant(double* col, int& zeros)
 int RandPSSMGen::WhatColumn(int i, int len)
 {
 	//0 = e0, 1=e1, 2=e2, 3=m2, 4=m1, 5=m0 (middle)
-	if(i==0 || i==len-1) 
+	if(i==0 || i==len-1)
 		return(0);
 	else if(i==1||i==len-2)
 		return(1);
@@ -415,7 +415,7 @@ double RandPSSMGen::SumColumn(double* col)
 {
 	double s=0;
 	for(int i=0; i<B; i++)
-	{	
+	{
 		s+=col[i];
 	}
 	return(s);

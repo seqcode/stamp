@@ -55,7 +55,7 @@ public:
 
 //Alignment record
 class AlignRec{
-private: 
+private:
 	int alignL;
 	int numAligned;
 public:
@@ -94,7 +94,7 @@ public:
 
 //Alignment record
 class MultiAlignRec{
-private: 
+private:
 	int alignL;
 	int numAligned;
 public:
@@ -122,8 +122,8 @@ public:
 };
 
 //Alignment method
-class Alignment 
-{	
+class Alignment
+{
 protected:
 	double gapOpen;
 	double gapExtend;
@@ -164,9 +164,9 @@ public:
 	//Trim edges of a motif
 	Motif* TrimEdges(Motif* in, int &start_offset, int &stop_offset, int minLen=IC_win_len, bool allowExclusive=false);
 
-	//Destructor 
+	//Destructor
 	virtual ~Alignment(){for(int i=0; i<2; i++){delete alignSection[i];delete alignSectionTmp[i];} delete alignSection;delete alignSectionTmp;};
-	
+
 };
 
 

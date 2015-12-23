@@ -77,7 +77,7 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 	Motif* f_curr = new Motif(1);
 	gsl_rng * r = gsl_rng_alloc (gsl_rng_taus);
 	tmp_rec* curr_record;
-	
+
 	tmp_rec* pcc_record = new tmp_rec [NUM_RC*2];
 	tmp_rec* allr_record = new tmp_rec [NUM_RC*2];
 	tmp_rec* ssd_record = new tmp_rec [NUM_RC*2];
@@ -113,12 +113,12 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 	//Make basic columns here
 	for(j=0; j<4; j++){ alphaA[j] = t_centre->f[0][j]*D_VAR;}
 	for(j=0; j<4; j++){ alphaB[j] = f_centre->f[0][j]*D_VAR;}
-	
+
 	for(i=0; i<NUM_RC; i++){
-		
-		gsl_ran_dirichlet(r, 4, alphaA, t_curr->f[0]);			
+
+		gsl_ran_dirichlet(r, 4, alphaA, t_curr->f[0]);
 		PS->f_to_n(t_curr); PS->n_to_pwm(t_curr);//printf("%lf\t%lf\t%lf\t%lf", t_curr->pwm[0][0], t_curr->pwm[0][1], t_curr->pwm[0][2], t_curr->pwm[0][3]);
-		gsl_ran_dirichlet(r, 4, alphaB, f_curr->f[0]);				
+		gsl_ran_dirichlet(r, 4, alphaB, f_curr->f[0]);
 		PS->f_to_n(f_curr); PS->n_to_pwm(f_curr);
 
 		t_currScore = cc_pcc->Compare(t_centre, 0, t_curr, 0);
@@ -136,7 +136,7 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 		t_currScore = cc_kl->Compare(t_centre, 0, t_curr, 0);
 		kl_record[i*2].marker = true;
 		kl_record[i*2].score = t_currScore;
-				
+
 		f_currScore = cc_pcc->Compare(t_centre, 0, f_curr, 0);
 		pcc_record[(i*2)+1].marker = false;
 		pcc_record[(i*2)+1].score = f_currScore;
@@ -153,7 +153,7 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 		kl_record[(i*2)+1].marker = false;
 		kl_record[(i*2)+1].score = f_currScore;
 	}
-	
+
 	//Sort the results
 	qsort((void*)pcc_record, (size_t)(NUM_RC*2), sizeof(tmp_rec), compare);
 	qsort((void*)allr_record, (size_t)(NUM_RC*2), sizeof(tmp_rec), compare);
@@ -168,7 +168,7 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 	bool found_0_1=false, found_0_5=false, found_1=false, found_5=false, found_10=false;
 	int win_start=0, win_stop, win_stop_init = win_stop;
 	for(int x=0; x<5; x++){
-		
+
 		if(x==0){printf("PCC:\t");
 		}else if(x==1){printf("ALLR:\t");
 		}else if(x==2){printf("SSD:\t");
@@ -181,11 +181,11 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 		found_0_1=false; found_0_5=false; found_1=false; found_5=false; found_10=false;
 		win_start=0; win_stop =10000; win_stop_init = win_stop;
 		TP=0; FP=0;
-		
+
 		for(i=0; i<NUM_RC*2; i++){
 			if(x==0){
 				if(pcc_record[i].marker){TP++; }
-				else{FP++;}	
+				else{FP++;}
 			}else if(x==1){
 				if(allr_record[i].marker){TP++; }
 				else{FP++;}
@@ -213,7 +213,7 @@ void PlatformTesting::RandColumns(PlatformSupport* PS, double infoContent)
 				else{
 					win_FP_perc+=FP_perc_record[i];
 					win_TP+=TP_record[i];
-				}			
+				}
 				win_FP_perc-=FP_perc_record[win_start-1];
 				win_TP-=TP_record[win_start-1];
 
@@ -275,7 +275,7 @@ void PlatformTesting::ColumnScoreDist(Motif** motifSet, int numMotifs, double in
 						currScore =  Metric->Compare(motifSet[i], j, motifSet[x], y);
 						//Add to histogram
 						if(currScore<=h_min)
-							histogram[0]++; 
+							histogram[0]++;
 						else if(currScore>=h_max)
 							histogram[histoSize-1]++;
 						else{
@@ -298,7 +298,7 @@ void PlatformTesting::ColumnScoreDist(Motif** motifSet, int numMotifs, double in
 void PlatformTesting::ColumnDepthDist(Motif** motifSet, int numMotifs)
 {
 	int i, j, k, z, cols=0;
-	double ttl=0; 
+	double ttl=0;
 	double sum_of_all=0, sum_of_one=0;
 	double h_max=50.0; double h_min=0.0; int h_min_int = abs((int)h_min);
 	double* histogram;
@@ -318,9 +318,9 @@ void PlatformTesting::ColumnDepthDist(Motif** motifSet, int numMotifs)
 			}sum_of_one+=ttl;
 			//Add to histogram
 			if(ttl<=h_max)
-				histogram[(int)ttl]++; 
+				histogram[(int)ttl]++;
 			else if(ttl>h_max)
-				histogram[histoSize-1]++;	
+				histogram[histoSize-1]++;
 			cols++;
 		}
 		sum_of_all += sum_of_one/(double)motifSet[i]->len;

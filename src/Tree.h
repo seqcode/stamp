@@ -95,10 +95,10 @@ protected:
 	//Kill the children
 	void KillChildren(TreeNode* n);
 	//Method used to print the tree
-    void PostorderPrintTree(TreeNode* n, FILE* out, FILE* orderMat=NULL);
+	void PostorderPrintTree(TreeNode* n, FILE* out, FILE* orderMat=NULL);
 	//Method used to print the node's children
-    void PostorderPrintNodes(TreeNode* n, FILE* out);
-    //Print the matrices and children names for a node
+	void PostorderPrintNodes(TreeNode* n, FILE* out);
+	//Print the matrices and children names for a node
 	void PrintNode(TreeNode* n, FILE* out);
 	//Deletion method
 	void PostorderDeleteTree(TreeNode* n);
@@ -117,7 +117,7 @@ public:
 	//The root of the tree
 	TreeNode* root;
 
-    //Constructor
+	//Constructor
 	Tree(Alignment* A=NULL){root=NULL;Aman=A;silence=false;}
 
 	//Virtual building method

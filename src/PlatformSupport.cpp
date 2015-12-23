@@ -38,24 +38,24 @@
 //Constructor
 PlatformSupport::PlatformSupport()
 {
-	matCount=0; 
+	matCount=0;
 	matchDBSize=0;
-	markov=NULL; 
-	charMap=NULL; 
+	markov=NULL;
+	charMap=NULL;
 	scoreDistStdDev=NULL;
 	scoreDistMean = NULL;
 	pairwiseAlign=NULL;
 	backgroundOrder=0;
 	usingWeighting=false;
-	
+
 	charMap=(char***)malloc((MAX_MARKOV+1)*sizeof(char**));
 	markov=(double**)malloc((MAX_MARKOV+1)*sizeof(double*));
-	
+
 	for(int j=1;j<=MAX_MARKOV;j++)
 	{
 		markov[j]=(double*)malloc(((int)pow(B,j))*sizeof(double));
 		charMap[j]=(char**)malloc(((int)pow(B,j))*sizeof(char*));
-		for(int i=0;i<pow(B,j);i++) 
+		for(int i=0;i<pow(B,j);i++)
 			charMap[j][i]=(char*)malloc((j+1)*sizeof(char));
 	}
 	backgroundSet=false;
@@ -67,13 +67,13 @@ void PlatformSupport::ReadBackground(char* fn)
 	char *xmer;
 	int i,j;
 	double px;
-	
+
 	xmer=(char*)malloc((MAX_MARKOV+1)*sizeof(char));
-	
+
 	if(fn!=NULL){
 		FILE* modelp = fopen(fn, "r");
 		if(modelp==NULL){perror("Cannot open background file");exit(1);}
-	
+
 		while(fscanf(modelp,"%d %s %lf\n",&i,xmer,&px) != EOF)
 		{
 			j=strlen(xmer);
@@ -116,7 +116,7 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 		currCnt=matchDBSize;
 	}
 	currCnt=0;
-	
+
 	if(!backgroundSet)
 	{	printf("ReadBackground not called; exiting");
 		exit(1);
@@ -139,8 +139,8 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 			if(famNames)
 			{	sscanf(line, " %s %s %s", tag, tmp_Motif->name, tmp_Motif->famName);
 			}else if(useweighting){
-				sscanf(line, " %s %s %lf", tag, tmp_Motif->name, &tmpWeight); 
-				tmp_Motif->weighting=tmpWeight; 
+				sscanf(line, " %s %s %lf", tag, tmp_Motif->name, &tmpWeight);
+				tmp_Motif->weighting=tmpWeight;
 				total_weight+=tmp_Motif->weighting;
 			}else{
 				sscanf(line, " %s %s", tag, tmp_Motif->name);
@@ -231,12 +231,12 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 
 	//Compare each matrix to every other matrix
 	for(i=0; i<matCount; i++){
-		for(j=0; j<i; j++) 
+		for(j=0; j<i; j++)
 		{
 			if(i!=j)
 			{
 				bestScore = A_man->AlignMotifs2D(inputMotifs[i], inputMotifs[j], align1, align2, aLen, forward1, forward2);
-			               
+
 				//Add bestScore to the proper mean and std_dev array
 				x=inputMotifs[i]->len;
 				if(x<minLen){x=minLen;}
@@ -258,7 +258,7 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 					max[y][x]=bestScore;
 				else if(bestScore<min[y][x])
 					min[y][x]=bestScore;
-				
+
 				/*///////////////////////////////////////////////////
 				if(x==9 && y==6)
 					gsl_histogram_increment(score_hist, bestScore);
@@ -277,11 +277,11 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 		printf("%lf\t%lf\n", (-20+((double)x*40/200)), gsl_histogram_get(score_histB, x));
 	gsl_histogram_reset(score_hist);
 	gsl_histogram_reset(score_histB);
-	*///////////////////////////////////////////////////	
+	*///////////////////////////////////////////////////
 
 	for(x=minLen; x<maxLen; x++)
 		for(y=minLen; y<maxLen; y++)
-		{	
+		{
 			std_dev[x][y] = sampSq[x][y] -((sum[x][y]*sum[x][y])/count[x][y]);
 			std_dev[x][y] = std_dev[x][y]/count[x][y];
 			if(std_dev[x][y]!=0)
@@ -310,7 +310,7 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 		printf("%lf\t%lf\n", (-20+((double)x*40/200)), gsl_histogram_get(score_hist, x));
 	printf("\n\n");
 */	////////////////////////////////////////////////////////
-	
+
 	for(i=0; i<maxLen; i++) {
 		free(sum[i]);
 		free(std_dev[i]);
@@ -382,7 +382,7 @@ double PlatformSupport::Score2ZScore(int len1, int len2, double score)
 	std_dev=scoreDistStdDev[l1][l2];
 	if(std_dev<=0)
 		std_dev=1;
-	
+
 	return((score-mean)/std_dev);
 }
 
@@ -411,7 +411,7 @@ double PlatformSupport::Score2PVal(int len1, int len2, double score)
 
 	start = score - mean;
 	p_val = gsl_cdf_gaussian_P(start, std_dev);
-	
+
 	return(p_val);
 }
 
@@ -455,7 +455,7 @@ void PlatformSupport::PreAlign(Alignment* A_man)
 
 	pairwiseAlign = new AlignRec*[matCount];
 	for(i=0; i<matCount; i++)
-	{	
+	{
 		pairwiseAlign[i] = new AlignRec[matCount];
 	}
 
@@ -552,7 +552,7 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 	topIndices = new int[topX];
 	topAligns = new char**[topX];
 	for(x=0; x<topX; x++){
-		topScores[x]=0; topIndices[x]=0; 
+		topScores[x]=0; topIndices[x]=0;
 		topAligns[x]=new char*[2];
 		topAligns[x][0]=new char[STR_LEN];
 		topAligns[x][1]=new char[STR_LEN];
@@ -567,12 +567,12 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 		printf("\n");
 	}
 	for(i=0; i<GetMatCount(); i++){
-		
+
 		if(printAll)
 			printf("%s\t", inputMotifs[i]->GetName());
-		
+
 		for(x=0; x<topX; x++){
-			topScores[x]=0; topIndices[x]=0; 
+			topScores[x]=0; topIndices[x]=0;
 			strcpy(topAligns[x][0], "");strcpy(topAligns[x][1], "");
 		}
 
@@ -672,7 +672,7 @@ void PlatformSupport::n_to_pwm(Motif* m)
 double PlatformSupport::InfoContent(Motif* m)
 {
 	double sum=0.0;
-	
+
 	for(int j=0;j<m->GetLen();j++) {
 		for(int b=0;b<B;b++) {
 			if(m->f[j][b]) {
@@ -696,7 +696,7 @@ PlatformSupport::~PlatformSupport()
 
 	if(markov!=NULL && charMap!=NULL){
 		for(i=1; i<=MAX_MARKOV; i++){
-			for(j=0;j<pow(B,i);j++) 
+			for(j=0;j<pow(B,i);j++)
 			{	free(charMap[i][j]); }
 			free(charMap[i]);
 			free(markov[i]);
@@ -705,12 +705,12 @@ PlatformSupport::~PlatformSupport()
 		free(markov);
 	}
 	if(scoreDistMean!=NULL){
-		for(i=0; i<maxLen; i++) 
+		for(i=0; i<maxLen; i++)
 			free(scoreDistMean[i]);
 		free(scoreDistMean);
 	}
 	if(scoreDistStdDev!=NULL){
-		for(i=0; i<maxLen; i++) 
+		for(i=0; i<maxLen; i++)
 			free(scoreDistStdDev[i]);
 		free(scoreDistStdDev);
 	}

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 ################################################
-## formatMotifs.pl 
+## formatMotifs.pl
 ##
 ## Copyright 2007 Shaun Mahony
 ##
@@ -31,8 +31,8 @@ my $CONS1 = 0.6;
 my $CONS2 = 0.8;
 my $coreLen = 4;
 if($#ARGV<=0){
-    print "formatMotifs.pl\n\n\tUsage: perl formatMotifs.pl inputFile outputFile <min flanking info content> <output motif prefix> <output motif postfix>\n";
-    print "\n\tNote that converted motifs will be *appended* to the output file instead of overwriting it.\n\tVarious input formats are detected and converted to TRANSFAC-like format for usage with STAMP.\n\n\tThe list of supported input formats can be found at:\n\t    http://www.benoslab.pitt.edu/stamp/help.html#input\n";
+	print "formatMotifs.pl\n\n\tUsage: perl formatMotifs.pl inputFile outputFile <min flanking info content> <output motif prefix> <output motif postfix>\n";
+	print "\n\tNote that converted motifs will be *appended* to the output file instead of overwriting it.\n\tVarious input formats are detected and converted to TRANSFAC-like format for usage with STAMP.\n\n\tThe list of supported input formats can be found at:\n\t    http://www.benoslab.pitt.edu/stamp/help.html#input\n";
 }else{
 my $inFilename = $ARGV[0];
 my $outFilename = $ARGV[1];
@@ -86,7 +86,7 @@ for($i=0; $i<=$#linesCurr && $i<5; $i++) {
 	if($#curr>=0){
 		if($curr[0] eq "AlignACE"){
 			$motif_finder=1;
-			$alignace=1; 
+			$alignace=1;
 			$i=5;
 		}elsif($curr[0] eq "MEME"){
 			$motif_finder=1;
@@ -132,7 +132,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 	if($#curr>=0){
 		if($i<$#linesCurr-3 && $linesCurr[$i] =~ m/$weedStr/ && $linesCurr[$i+3] =~ m/\*\*\* Interesting motifs \(highest-ranking\) seem to be/){
 			$motif_finder=1;
-			$weeder=1; 
+			$weeder=1;
 			$i=$#linesCurr+1;
 		}elsif($i<$#linesCurr-2 && $linesCurr[$i] =~ m/MDscan Search Result/ && $linesCurr[$i+2] =~ m/\*\*\*\*\*\*\*\*\*\*\*\*/){
 			$motif_finder=1;
@@ -148,22 +148,22 @@ for($i=0; $i<=$#linesCurr; $i++) {
 		}
 	}
 }
-	
+
 #Detect individual motifs and reformat
 for($i=0; $i<=$#linesCurr; $i++) {
-	
+
 	@currA = "";
 	@currC = "";
 	@currG = "";
 	@currT = "";
-	$good=0;	
+	$good=0;
 	@curr = split(" ", $linesCurr[$i]);
 	if($#curr>=0 && length($curr[0])>0){
 		@firstWord=split(//, $curr[0]);
 	}else{
 		$firstWord[0]="Z";
 	}
-	
+
 	###################################################################
 	### Translation area
 	###
@@ -173,8 +173,8 @@ for($i=0; $i<=$#linesCurr; $i++) {
 		if($bioprospector==1 && $#curr>=0 && ($curr[0] eq "Blk1" || $curr[0] eq "Blk2")){#BioProspector results file
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
-			$WeightOrFam ="";			
-			$finished=0;				
+			$WeightOrFam ="";
+			$finished=0;
 			$x=0;$i++;
 			while($i<=$#linesCurr && $finished==0){
 				@tmp = split(" ",  $linesCurr[$i]);
@@ -187,7 +187,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$finished=1; $x=0;
 					}
 					$x++;
-					$i++;					
+					$i++;
 				}else{
 					$finished=1;
 				}
@@ -200,12 +200,12 @@ for($i=0; $i<=$#linesCurr; $i++) {
 		}elsif($mdscan==1 && $#curr>=0 && (($curr[0] eq "Final" && $curr[1] eq "Motif") || ($curr[0] eq "Motif" && $curr[2] eq "Wid"))){#MDscan results file
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
-			$WeightOrFam ="";			
-			$finished=0;				
+			$WeightOrFam ="";
+			$finished=0;
 			$x=0;
 			if($curr[0] eq "Motif"){$i+=3;
 			}else{$i+=2;}
-			
+
 			while($i<=$#linesCurr && $finished==0){
 				@tmp = split(" ",  $linesCurr[$i]);
 				if($finished==0 && $#tmp ==8 && $tmp[0] !~ m/\>/){
@@ -217,7 +217,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$finished=1; $x=0;
 					}
 					$x++;
-					$i++;					
+					$i++;
 				}else{
 					$finished=1;
 				}
@@ -245,7 +245,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 							$finished=1; $x=0;
 						}
 						$x++;
-						$i++;					
+						$i++;
 					}else{
 						$finished=1;
 					}
@@ -264,7 +264,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			if($#tmp ==3){
 				$i++;$finished=0;
 				$x=length($tmp[0]);
-				for($c=0; $c<$x; $c++){$currA[$c]=0;$currC[$c]=0;$currG[$c]=0;$currT[$c]=0;}	
+				for($c=0; $c<$x; $c++){$currA[$c]=0;$currC[$c]=0;$currG[$c]=0;$currT[$c]=0;}
 				while($i<=$#linesCurr && $finished==0){
 					@tmp = split(" ",  $linesCurr[$i]);
 					if($finished==0 && ($#tmp ==3) && $tmp[0] !~ m/\*/){
@@ -276,7 +276,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 							@currSeqBP = split(//, $seq);
 							for($c=0; $c<=$#currSeqBP; $c++){
 								@currBase = consensus2column($currSeqBP[$c]);
-								
+
 								$currA[$c]+=$currBase[0];
 								$currC[$c]+=$currBase[1];
 								$currG[$c]+=$currBase[2];
@@ -284,7 +284,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 								if($currA[$c]<0 || $currC[$c]<0 || $currG[$c]<0 || $currT[$c]<0){
 									$finished=1; $x=0;
 								}
-							}								
+							}
 						}
 						$i++;
 					}else{
@@ -313,7 +313,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$finished=1; $x=0;
 					}
 					$x++;
-					$i++;					
+					$i++;
 				}else{
 					$finished=1;
 				}
@@ -338,7 +338,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					if($currA[$x]<0 || $currC[$x]<0 || $currG[$x]<0 || $currT[$x]<0){
 						$finished=1; $x=0;
 					}
-					$x++;$i++;					
+					$x++;$i++;
 				}else{$finished=1;}
 			}
 			if($x>0){
@@ -378,7 +378,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
 			$WeightOrFam ="";
-			$i++;$finished=0;$x=0;			
+			$i++;$finished=0;$x=0;
 			$base_cols=0;
 			for($x=0; $x<4; $x++){
 				$i++;
@@ -400,7 +400,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$currT[$z-2]= $tmp[$z];if($currT[$z-2]<0){$x=4;}
 					}if($#currT==$#currA){$base_cols++;}
 				}
-			}		
+			}
 			if($base_cols==4){
 				print "$InfName\n";
 				$good=1;
@@ -410,7 +410,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
 			$WeightOrFam ="";
-			$finished=0;$x=0;			
+			$finished=0;$x=0;
 			$base_cols=0;
 			for($x=0; $x<4; $x++){
 				@tmp = split(" ",  $linesCurr[$i]);
@@ -431,7 +431,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$currT[$z-2]= $tmp[$z];if($currT[$z-2]<0){$x=4;}
 					}if($#currT==$#currA){$base_cols++;}
 				}$i++;
-			}		
+			}
 			if($base_cols==4){
 				print "$InfName\n";
 				$good=1;
@@ -441,7 +441,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
 			$WeightOrFam ="";
-			$finished=0;$x=0;			
+			$finished=0;$x=0;
 			$base_cols=0;
 			$i++;
 			for($x=0; $x<4; $x++){
@@ -463,7 +463,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$currT[$z-1]= $tmp[$z];if($currT[$z-1]<0){$x=4;}
 					}if($#currT==$#currA){$base_cols++;}
 				}$i++;
-			}		
+			}
 			if($base_cols==4){
 				print "$InfName\n";
 				$good=1;
@@ -473,7 +473,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
 			$WeightOrFam ="";
-			$finished=0;$x=0;			
+			$finished=0;$x=0;
 			$base_cols=0;
 			$i+=3;
 			for($x=0; $x<4; $x++){
@@ -495,7 +495,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						$currT[$z-1]= $tmp[$z];if($currT[$z-1]<0){$x=4;}
 					}if($#currT==$#currA){$base_cols++;}
 				}$i++;
-			}		
+			}
 			if($base_cols==4){
 				print "$InfName\n";
 				$good=1;
@@ -505,7 +505,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
 			$WeightOrFam ="";
-			$finished=0;$x=0;			
+			$finished=0;$x=0;
 			$base_cols=0;
 			for($x=0; $x<4; $x++){
 				@tmp = split(" ",  $linesCurr[$i]);
@@ -531,17 +531,17 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					$currT[$z]= $tmp[$z];if($currT[$z]<0){$x=4;}
 				    }if($#currT==$#currA){$base_cols++;}
 				}$i++;
-			}		
+			}
 			if($base_cols==4){
 				print "$InfName\n";
 				$good=1;
 				$numMotifs++;
 			}
 		}
-			
-	######################################################################		
+
+	######################################################################
 	}else{### Now deal with the individual motif formats
-	######################################################################	
+	######################################################################
 		if($#curr>=0 && ($curr[0] eq "DE" || $curr[0] eq "NA" || $curr[0] eq "PO" || $curr[0] eq "P0" || $curr[0] eq "AC")){#TRANSFAC Format
 			$currTag = $curr[0];
 			if($currTag eq "DE" || $currTag eq "NA" || $currTag eq "AC"){
@@ -570,9 +570,9 @@ for($i=0; $i<=$#linesCurr; $i++) {
 				if($tmp[0] eq $currTag){$abort=1;
 				}else{$i++;}
 			}
-			
+
 			if($abort==0){
-				$finished=0;				
+				$finished=0;
 				$x=0;
 				while($i<=$#linesCurr && $finished==0){
 					@tmp = split(" ",  $linesCurr[$i]);
@@ -586,7 +586,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 							$finished=1; $x=0;
 						}
 						$x++;
-						$i++;					
+						$i++;
 					}else{
 						$finished=1;
 					}
@@ -597,7 +597,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					$numMotifs++;
 				}
 			}
-			
+
 		}elsif($curr[0] =~ m/letter-probability/ && $i>=2 && $linesCurr[$i-2] =~m/position-specific probability matrix/){
 			###MEME single motif format
 			$tmpNum = $numMotifs+1;
@@ -612,7 +612,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						foreach $tag (@MotifTags){if($tmp[0] eq $tag){$finished=1; $i--;} if($finished==0 && $tmp[0] =~ m/\>/){$finished=1; $i--;}}
 						if($finished==0 && $#tmp!=3){$finished=1;}
 					}
-					
+
 					if($finished==0 && ($#tmp ==3)){
 						$currA[$x]=$tmp[0];
 						$currC[$x]=$tmp[1];
@@ -622,7 +622,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 							$finished=1; $x=0;
 						}
 						$x++;
-						$i++;					
+						$i++;
 					}else{
 						$finished=1;
 					}
@@ -632,7 +632,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					$good=1;
 					$numMotifs++;
 				}
-			}			
+			}
 		}elsif($linesCurr[$i] =~ m/\<motif\>/){ ### XMS format
 			$tmpNum = $numMotifs+1;
 			$InfName = "Motif".$tmpNum;
@@ -643,7 +643,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					@tmpParse = split(/$sTag/, $linesCurr[$i]);
 					$tmpParse[1] =~ tr/\>\<\\\///d;
 					$InfName=$tmpParse[1];
-					
+
 				}elsif($linesCurr[$i] =~ m/\<weightmatrix/ && $linesCurr[$i] !~ m/DNA/){
 					$keepGoing=0;
 				}elsif($linesCurr[$i] =~ m/\<column/){
@@ -691,9 +691,9 @@ for($i=0; $i<=$#linesCurr; $i++) {
 					$WeightOrFam ="";
 				}
 			}
-			
+
 			@tmp= split(" ",  $linesCurr[$i+1]);
-			
+
 			if($tmp[0] eq "A" && $#tmp>1){###JASPAR format
 				$base_cols=0;
 				for($x=0; $x<4; $x++){
@@ -729,14 +729,14 @@ for($i=0; $i<=$#linesCurr; $i++) {
 				$noTag = 1;
 				if($#tmp>=0){foreach $tag (@MotifTags){if($tmp[0] eq $tag){$noTag=0; } if($tmp[0] =~ m/\>/){$noTag=0;}}}
 				if($noTag==1 && ($#tmp ==3)){###Raw PSSM format (similar to TRANSFAC)
-					$finished=0;				
+					$finished=0;
 					$x=0;
 					$i++;
 					while($i<=$#linesCurr && $finished==0){
 						@tmp = split(" ",  $linesCurr[$i]);
 						if($#tmp>=0){foreach $tag (@MotifTags){if($tmp[0] eq $tag){$finished=1; $i--;} if($finished==0 && $tmp[0] =~ m/\>/){$finished=1; $i--;}}
 						}else{$finished=1; $i--;}
-						
+
 						if($finished==0 && ($#tmp ==3)){
 							$currA[$x]=$tmp[0];
 							$currC[$x]=$tmp[1];
@@ -746,7 +746,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 								$finished=1; $x=0;
 							}
 							$x++;
-							$i++;					
+							$i++;
 						}else{
 							$finished=1;
 						}
@@ -755,22 +755,22 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						print "$InfName\n";
 						$good=1;
 						$numMotifs++;
-					}					
+					}
 				}elsif($noTag==1 && ($#tmp ==0)){###Consensus Sequence / Sequence alignment
-					$finished=0;	
+					$finished=0;
 					$x=length($tmp[0]);
 					for($c=0; $c<$x; $c++){
 						$currA[$c]=0;
 						$currC[$c]=0;
 						$currG[$c]=0;
 						$currT[$c]=0;
-					}		
+					}
 					$i++;
 					while($i<=$#linesCurr && $finished==0){
 						@tmp = split(" ",  $linesCurr[$i]);
 						if($#tmp>=0){foreach $tag (@MotifTags){if($tmp[0] eq $tag){$finished=1; $i--;} if($finished==0 && $tmp[0] =~ m/\>/){$finished=1; $i--;}}
 						}else{$finished=1; $i--;}
-						
+
 						if($finished==0 && ($#tmp ==0)){
 							$seq = $tmp[0];
 							$seq =~ tr/a-z/A-Z/;
@@ -780,7 +780,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 								@currSeqBP = split(//, $seq);
 								for($c=0; $c<=$#currSeqBP; $c++){
 									@currBase = consensus2column($currSeqBP[$c]);
-									
+
 									$currA[$c]+=$currBase[0];
 									$currC[$c]+=$currBase[1];
 									$currG[$c]+=$currBase[2];
@@ -788,7 +788,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 									if($currA[$c]<0 || $currC[$c]<0 || $currG[$c]<0 || $currT[$c]<0){
 										$finished=1; $x=0;
 									}
-								}								
+								}
 							}
 							$i++;
 						}else{
@@ -799,16 +799,16 @@ for($i=0; $i<=$#linesCurr; $i++) {
 						print "$InfName\n";
 						$good=1;
 						$numMotifs++;
-					}							
+					}
 				}
-			}					
-		}		
+			}
+		}
 	}
 	}
 	#############################################################
 	## End of translation area
 	#############################################################
-	
+
 	#trim the motif if necessary
 	if($trimming==1 && $good==1){
 		$curr_m_len = $#currA+1;
@@ -817,7 +817,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 		}
 		@currA = "";@currC = "";@currG = "";@currT = "";
 		$core_start=0;
-		
+
 		##Find the core region of greatest IC
 		$maxIC=0;
 		for($y1=0; $y1<$curr_m_len-$coreLen; $y1++){
@@ -847,7 +847,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			}else{
 				$run=1;
 			}
-		}					
+		}
 		##Copy the new motif into the matrix
 		$y2=0;
 		for($y1=$mStart; $y1<=$mStop; $y1++){
@@ -858,9 +858,9 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			$y2++;
 		}#printf("%s before %f\t", $f_count{$tmp[4]}[2], $curr_m_len);
 		$curr_m_len = ($mStop-$mStart)+1;
-		
+
 	}
-	
+
 	#print the motif
 	if($good==1){
 		if($numMotifs<=$maxNumMotifsOut){
@@ -870,7 +870,7 @@ for($i=0; $i<=$#linesCurr; $i++) {
 				$InfName = $tmp;
 			}
 			$nameCheck{$InfName}++;
-			if($nameCheck{$InfName}>1){						
+			if($nameCheck{$InfName}>1){
 				$InfName = $InfName."_v".$nameCheck{$InfName};
 			}
 			if($numMotifs==1){
@@ -886,11 +886,11 @@ for($i=0; $i<=$#linesCurr; $i++) {
 			for($j=0; $j<=$#currA; $j++) {
 				#print consensus at end here
 				$currCons = column2consensus($currA[$j],$currC[$j],$currG[$j],$currT[$j]);
-				print OUT "$j\t$currA[$j]\t$currC[$j]\t$currG[$j]\t$currT[$j]\t$currCons\n";	
+				print OUT "$j\t$currA[$j]\t$currC[$j]\t$currG[$j]\t$currT[$j]\t$currCons\n";
 			}
 			print OUT "XX\n";
 		}
-		
+
 	}
 }
 if($numMotifs !=0){
@@ -920,26 +920,26 @@ sub calcIC {
 #Returns the consensus letter for this column
 sub column2consensus{
 	@f=();
-	$f[0] = $_[0];	
+	$f[0] = $_[0];
 	$f[1] = $_[1];
 	$f[2] = $_[2];
 	$f[3] = $_[3];
 	#Hard-coded consensus alphabet rules
 	@two_base_l = ("Y", "R", "W", "S", "K", "M");
-	
+
 	$sum=0;
 	for($g=0; $g<4; $g++){
 		$sum+=$f[$g];
 	}
-	
-	@two_base_c =();	
+
+	@two_base_c =();
 	$two_base_c[0]=($f[1]+$f[3])/$sum;
 	$two_base_c[1]=($f[0]+$f[2])/$sum;
 	$two_base_c[2]=($f[0]+$f[3])/$sum;
 	$two_base_c[3]=($f[1]+$f[2])/$sum;
 	$two_base_c[4]=($f[2]+$f[3])/$sum;
 	$two_base_c[5]=($f[0]+$f[1])/$sum;
-	
+
 	if($f[0]/$sum>=$CONS1) {$curr="A";}
 	elsif($f[1]/$sum>=$CONS1) {$curr="C";}
 	elsif($f[2]/$sum>=$CONS1) {$curr="G";}
@@ -954,14 +954,14 @@ sub column2consensus{
 			}
 		}
 	}
-	
+
 	return($curr);
 }
 #convert a consensus base to a column
 sub consensus2column{
 	$currBase = $_[0];
 	@retCol = ();
-	$retCol[0]=0; $retCol[1]=0; $retCol[2]=0; $retCol[3]=0; 
+	$retCol[0]=0; $retCol[1]=0; $retCol[2]=0; $retCol[3]=0;
 	if($currBase eq "A"){$retCol[0]=1;
 	}elsif($currBase eq "C"){$retCol[1]=1;
 	}elsif($currBase eq "G"){$retCol[2]=1;

@@ -93,9 +93,9 @@ void UPGMA::BuildTree(PlatformSupport* p, bool treeTest)
 	int i, j, k, z;
 	TreeNode* tmpNode;
 	TreeNode** nodes = new TreeNode*[numMotifs];
-    bool* active = new bool[numMotifs];
-    double minCH = 10000000;
-    nodesMinCH = numMotifs;
+	bool* active = new bool[numMotifs];
+	double minCH = 10000000;
+	nodesMinCH = numMotifs;
 
 //	double* error = new double[numMotifs];////////////////Necessary only for Davies-Bouldin
 	for(i=0; i<numMotifs; i++){
@@ -148,7 +148,7 @@ void UPGMA::BuildTree(PlatformSupport* p, bool treeTest)
 		tmpNode->leaf=false;
 		tmpNode->nodeID = z;
 		PostorderListChildren(tmpNode, tmpNode);
-        if(treeTesting)
+		if(treeTesting)
 			IRAlignment(tmpNode);
 		else
 			BuildFBP(tmpNode, pairwiseAlign,z);
@@ -194,7 +194,7 @@ void UPGMA::BuildTree(PlatformSupport* p, bool treeTest)
 			totalHomo=totalHomo/nodeCount;
 
 			///////////Calinski & Harabasz///////////////////////////
-            //Internal similarity of the nodes & between clusters
+			//Internal similarity of the nodes & between clusters
 			double internalSOSE=0, betweenSOSE=0, Ak=0;
 			double currE=0, currCount, tmpAvgDist;double tmpE;
 			for(j=0; j<numMotifs; j++){
@@ -593,7 +593,7 @@ void Neighbourjoin::BuildTree(PlatformSupport* p, bool treeTest)
 	int minNodeA, minNodeB;
 	TreeNode* tmpNode;
 	TreeNode** nodes = new TreeNode*[numMotifs];
-    bool* active = new bool[numMotifs];
+	bool* active = new bool[numMotifs];
 	double numActive = (double)numMotifs;
 	double* r = new double[numMotifs];
 	//double r_i, r_j, min_r_i, min_r_j;

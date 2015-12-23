@@ -46,7 +46,7 @@ double PearsonCorrelation::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 	double sum_diff1_sq=0, sum_diff2_sq=0;
 	double score=0;
 	double mean1=0, mean2=0;
-	
+
 	//Calc means
 	for(i=0; i<B; i++) {
 		mean1+=M_A->f[colA][i];
@@ -66,7 +66,7 @@ double PearsonCorrelation::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 			diff2 = M_B->f[colB][i]-mean2;
 
 			num += diff1*diff2;
-			
+
 			sum_diff1_sq += (diff1*diff1);
 			sum_diff2_sq += (diff2*diff2);
 		}
@@ -89,7 +89,7 @@ double ALLR::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 		LLR1 += (M_B->n[colB][i] * M_A->pwm[colA][i]);
 		LLR2 += (M_A->n[colA][i] * M_B->pwm[colB][i]);
 	}
-	
+
 	if(denom==0)
 		return(min);
 	else{
@@ -107,7 +107,7 @@ double ALLR_LL::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 		LLR1 += (M_B->n[colB][i] * M_A->pwm[colA][i]);
 		LLR2 += (M_A->n[colA][i] * M_B->pwm[colB][i]);
 	}
-	
+
 	if(denom==0)
 		return(min);
 	else{
@@ -138,7 +138,7 @@ double ChiSq::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 		CS2+=((M_B->n[colB][i]+1-exp2)*(M_B->n[colB][i]+1-exp2))/exp2;
 	}
 	x = (CS1+CS2);
-	
+
 	return(1-gsl_cdf_chisq_P(x, 3));
 }
 
@@ -159,7 +159,7 @@ double KullbackLieber::Compare(Motif* M_A, int colA, Motif* M_B, int colB)
 {
 	int i;
 	double KL1=0, KL2=0;
-	
+
 	for(i=0; i<B; i++){
 		if(M_A->f[colA][i]==0 || M_B->f[colB][i]==0){}
 		else{

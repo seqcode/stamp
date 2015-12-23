@@ -52,7 +52,7 @@ public:
 	//Run generator
 	void RunGenerator();
 
-    //Associate methods
+	//Associate methods
 	bool Invariant(double* col, int& zeros);
 	int WhatColumn(int i, int len);
 	double SumColumn(double* col);

@@ -42,7 +42,7 @@ Motif* MultipleAlignment::Alignment2Profile(MultiAlignRec* alignment, const char
 	newProfile = new Motif(alignL);
 	newProfile->members = alignment->GetNumAligned();
 	strcpy(newProfile->name, name);
-	for(z=0; z<alignL; z++){ 
+	for(z=0; z<alignL; z++){
 		sum=0;
 		for(x=0; x<alignment->GetNumAligned(); x++){
 			if(alignment->profileAlignment[x]->f[z][0] == -1){
@@ -56,10 +56,10 @@ Motif* MultipleAlignment::Alignment2Profile(MultiAlignRec* alignment, const char
 					newProfile->f[z][b] += alignment->profileAlignment[x]->f[z][b];
 					sum+=alignment->profileAlignment[x]->f[z][b];
 				}
-			}			
+			}
 		}
 		for(b=0; b<B; b++)
-		{	
+		{
 			newProfile->f[z][b] = newProfile->f[z][b]/sum;
 		}
 	}
@@ -91,7 +91,7 @@ Motif* MultipleAlignment::Alignment2SWFBP(MultiAlignRec* alignment, const char* 
 	}
 
 	strcpy(newProfile->name, name);
-	for(z=0; z<alignL; z++){ 
+	for(z=0; z<alignL; z++){
 		sum=0;
 		for(x=0; x<alignment->GetNumAligned(); x++){
 			if(alignment->profileAlignment[x]->f[z][0] == -1){
@@ -101,17 +101,17 @@ Motif* MultipleAlignment::Alignment2SWFBP(MultiAlignRec* alignment, const char* 
 					newProfile->f[z][b] += alignment->profileAlignment[x]->f[z][b]*weightings[x];
 					sum+=alignment->profileAlignment[x]->f[z][b]*weightings[x];
 				}
-			}			
+			}
 		}
 		for(b=0; b<B; b++)
-		{	
+		{
 			newProfile->f[z][b] = newProfile->f[z][b]/sum;
 		}
 	}
 	double maxIC=0;
 	double currIC=0;
 	int startWin=0, stopWin=alignL-1;
-	
+
 	//scan either side of the alignment, deleting columns as necessary
 	int mStart=0, mStop = alignL-1;
 	bool run=true;
@@ -165,7 +165,7 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 		}
 	}
 
-	int z; 
+	int z;
 	int last;
 	int aL = alignment->GetAlignL();
 
@@ -177,7 +177,7 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 				printf("<tr>\n<td width=\"250\">%s:", alignment->alignedNames[q]);
 			else
 				printf("%s:\t", alignment->alignedNames[q]);
-			
+
 			if(htmlOutput)
 				printf("</td>\n<td width=\"450\">");
 
@@ -195,7 +195,7 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 		printf("\n");
 		if(htmlOutput)
 			printf("</table></font></center>");
-	
+
 	}
 }
 
@@ -207,7 +207,7 @@ MultiAlignRec* MultipleAlignment::PreAlignedInput(PlatformSupport* p)
 	int i,j, b, z, alignLen=0;
 	double currTtl=0;
 
-    MultiAlignRec* alignment;
+	MultiAlignRec* alignment;
 	Motif* currProfile=NULL;
 	int numMotifs = p->GetMatCount();
 	//cycle through the motifs, checking that they are all the same length... exit otherwise
@@ -235,7 +235,7 @@ MultiAlignRec* MultipleAlignment::PreAlignedInput(PlatformSupport* p)
 
 	if(currProfile!=NULL)
 		delete currProfile;
-	
+
 	return(alignment);
 }
 
@@ -248,7 +248,7 @@ MultiAlignRec* ProgressiveProfileAlignment::BuildAlignment(PlatformSupport* p, A
 	Plat = p;
 	A_man = a;
 
-	PostorderAlignment(T->root, T->root);    
+	PostorderAlignment(T->root, T->root);
 
 	if(Plat->usingWeighting){
 		WeightedFBP(T->root->alignment, T->root->profile);
@@ -265,7 +265,7 @@ MultiAlignRec* ProgressiveProfileAlignment::BuildAlignment(PlatformSupport* p, A
 	FILE* out=fopen(outFName, "w");
 	T->root->profile->PrintMotif(out);
 	fclose(out);
-	
+
 	return(T->root->alignment);
 }
 
@@ -276,7 +276,7 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 	bool forward1, forward2; double score, sum;
 	AlignRec* aH = new AlignRec();
 	char tmpName[STR_LEN];
-		
+
 
 	if(n->left != NULL){PostorderAlignment(n->left, start);}
 	if(n->right != NULL){PostorderAlignment(n->right, start);}
@@ -287,13 +287,13 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 		n->alignment = new MultiAlignRec(1, n->profile->GetLen());
 		strcpy(n->alignment->alignedNames[0], n->profile->name);
 		strcpy(n->alignment->profileAlignment[0]->name, n->profile->name);
-		n->alignment->alignedIDs[0] = n->leafID; 
+		n->alignment->alignedIDs[0] = n->leafID;
 		//Fill alignSection
 		for(z=0; z<n->profile->GetLen(); z++)
 			for(b=0; b<B; b++)
 				n->alignment->profileAlignment[0]->f[z][b]=n->profile->f[z][b];
 	}
-	
+
 	if(!n->leaf)
 	{
 		Motif* revOne = new Motif(n->left->profile->GetLen());
@@ -308,13 +308,13 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 		else{curr1=revOne;}//printf("*R1*");}
 		if(forward2){curr2=n->right->profile;}
 		else{curr2 = revTwo;}//printf("*R2*");}
-		
+
 		//Align and copy the basic (pairwise) alignment to the place holder
 		if(n->alignment!=NULL)
 			delete n->alignment;
 		n->alignment = new MultiAlignRec(n->members, aL);
-		aH->CopyAlignSec(A_man->alignSection, aL); 
-		
+		aH->CopyAlignSec(A_man->alignSection, aL);
+
 		//Using the pairwise alignment placeholder, construct the alignment
 		for(b=0; b<n->left->alignment->GetNumAligned(); b++){
 			strcpy(n->alignment->alignedNames[b], n->left->alignment->alignedNames[b]);
@@ -327,7 +327,7 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 		}
 		last0=-50; last1=-50;
 		antiZ=0;
-		for(z=aL-1; z>=0; z--){ 
+		for(z=aL-1; z>=0; z--){
 			if(aH->alignSection[1][z]==last1 || aH->alignSection[1][z]==-1){
 				//Gap in alignment 1; add in alignment 0's column only
 				for(a=0; a<n->left->alignment->GetNumAligned(); a++){
@@ -381,8 +381,8 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 					if(!forward2)
 						n->alignment->profileAlignment[a+n->left->alignment->GetNumAligned()]->RevCompColumn(antiZ);
 				}
-			}	
-		
+			}
+
 			last0 = aH->alignSection[0][z];
 			last1 = aH->alignSection[1][z];
 			antiZ++;
@@ -399,7 +399,7 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 		delete revOne;
 		delete revTwo;
 	}
-	delete aH;	
+	delete aH;
 }
 
 //Iterative Refinement Multiple Alignment
@@ -446,7 +446,7 @@ MultiAlignRec* IterativeRefinementAlignment::BuildAlignment(PlatformSupport* p, 
 	if(currProfile!=NULL)
 		delete currProfile;
 	currProfile = Alignment2Profile(alignment, "current");
-	processed[minA]=true; processed[minB]=true; 
+	processed[minA]=true; processed[minB]=true;
 
 	//Step 2: Add the other profiles into the current alignment
 	for(x=0; x<nM-2; x++){
@@ -464,7 +464,7 @@ MultiAlignRec* IterativeRefinementAlignment::BuildAlignment(PlatformSupport* p, 
 		if(currProfile!=NULL)
 			delete currProfile;
 		currProfile = Alignment2Profile(alignment, "current");
-		processed[minA]=true; 
+		processed[minA]=true;
 	}
 
 	//Step 3: Remove each motif from the alignment in turn, rebuild the multiple alignment and add in the motif again
@@ -492,7 +492,7 @@ MultiAlignRec* IterativeRefinementAlignment::BuildAlignment(PlatformSupport* p, 
 
 	//Print the resulting multiple alignment
 	PrintMultipleAlignmentConsensus(alignment);
-	
+
 	strcpy(currProfile->name, "FBP");
 	char outFName[STR_LEN];
 	sprintf(outFName, "%sFBP.txt", outName);
@@ -530,7 +530,7 @@ MultiAlignRec* MultipleAlignment::SingleProfileAddition(MultiAlignRec* alignment
 	else{curr2 = revTwo;}
 	//Align and copy the basic (pairwise) alignment to the place holder
 	newAlignment = new MultiAlignRec(alignment->GetNumAligned()+1, aL);
-	aH->CopyAlignSec(A_man->alignSection, aL); 
+	aH->CopyAlignSec(A_man->alignSection, aL);
 
 
 	//Using the pairwise alignment placeholder, construct the alignment
@@ -545,7 +545,7 @@ MultiAlignRec* MultipleAlignment::SingleProfileAddition(MultiAlignRec* alignment
 
 	last0=-50; last1=-50;
 	antiZ=0;
-	for(z=aL-1; z>=0; z--){ 
+	for(z=aL-1; z>=0; z--){
 		if(aH->alignSection[1][z]==last1 || aH->alignSection[1][z]==-1){
 			//Gap in alignment 1; add in alignment 0's column only
 			for(a=0; a<alignment->GetNumAligned(); a++){
@@ -595,14 +595,14 @@ MultiAlignRec* MultipleAlignment::SingleProfileAddition(MultiAlignRec* alignment
 			}
 			if(!forward2)
 				newAlignment->profileAlignment[alignment->GetNumAligned()]->RevCompColumn(antiZ);
-		}	
-	
+		}
+
 		last0 = aH->alignSection[0][z];
 		last1 = aH->alignSection[1][z];
 		antiZ++;
 	}
 
-	
+
 	if(alignment!=NULL)
 		delete alignment;
 	delete one;
@@ -620,7 +620,7 @@ MultiAlignRec* MultipleAlignment::SingleProfileSubtraction(MultiAlignRec* alignm
 	int removeRow=-1;
 	int numBlankCol=0;
 	MultiAlignRec* newAlignment;
-	
+
 
 	//First find the row to remove
 	for(i=0; i<alignment->GetNumAligned(); i++){
@@ -691,10 +691,10 @@ void MultipleAlignment::WeightedFBP(MultiAlignRec* alignment, Motif* currProfile
 	double sum=0;
 	Motif* newProfile;
 	int alignL = alignment->GetAlignL();
-	
+
 	currProfile->Reset();
 	currProfile->members = alignment->GetNumAligned();
-	for(z=0; z<alignL; z++){ 
+	for(z=0; z<alignL; z++){
 		sum=0;
 		for(x=0; x<alignment->GetNumAligned(); x++){
 			if(alignment->profileAlignment[x]->f[z][0] == -1){
@@ -708,7 +708,7 @@ void MultipleAlignment::WeightedFBP(MultiAlignRec* alignment, Motif* currProfile
 					currProfile->f[z][b] += alignment->profileAlignment[x]->f[z][b]*(Plat->inputMotifs[alignment->alignedIDs[x]]->weighting/Plat->GetTotalWeight());
 					sum+=alignment->profileAlignment[x]->f[z][b]*(Plat->inputMotifs[alignment->alignedIDs[x]]->weighting/Plat->GetTotalWeight());
 				}
-			}			
+			}
 		}
 		for(b=0; b<B; b++)
 		{	//printf("%lf\t%lf\n", newProfile->f[z][b], sum);
@@ -716,7 +716,7 @@ void MultipleAlignment::WeightedFBP(MultiAlignRec* alignment, Motif* currProfile
 		}
 	}
 
-    Plat->f_to_n(currProfile);
+	Plat->f_to_n(currProfile);
 	Plat->n_to_pwm(currProfile);
 }
 

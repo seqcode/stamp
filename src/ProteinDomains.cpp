@@ -130,7 +130,7 @@ void ProteinDomains::ReadDomains(char* inFileName, Motif** inputMotifs, int numM
 		strcpy(currMotifName, inputMotifs[i]->GetName());
 		strcpy(individualMotifs[i]->name, currMotifName);
 		currCount=0;
-		
+
 		while(fgets(line, LONG_STR, in)) {
 			if(strlen(line)>2){//if it's not a newline
 				sscanf(line, "%s %s ", name, seq);
@@ -197,7 +197,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 	double **pairwise_ij;
 	double log_2_20 = log_2(20);
 	Motif* posPref = new Motif(20);
-	
+
 	//Set up pairwise_ij
 	pairwise_ij=new double*[B];
 	for(b=0; b<B; b++){
@@ -205,7 +205,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 		for(a=0; a<AA; a++)
 			pairwise_ij[b][a]=0;
 	}
-	
+
 	//set up M, Minfo, & MIConf
 	M = new double*[x];
 	Minfo = new double*[x];
@@ -221,7 +221,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 		}
 	}
 
-    //Fill in the M values
+	//Fill in the M values
 	for(i=0; i<x; i++){
 		for(j=0; j<y; j++){
 
@@ -273,7 +273,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 			}
 			Minfo[i][j]=mTtl * (domainMotif->Info(j)/log_2_20);
 			M[i][j]=mTtl;
-		}		
+		}
 	}
 
 	//print out the values of M
@@ -316,18 +316,18 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 
 			GTObs=0;
 			for(n=0; n<RAND_MUTI_N; n++){
-				//Reset 
+				//Reset
 				for(a=0; a<AA; a++)
 				{	ttl_acids[a]=0; obs_acids[a]=0;}
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++)
 					rand_acids[p]=0;
-					
+
 				//Count the number of distinct amino acids in the corresponding amino acid column
 				int aaDistinct=0;
 				for(a=0; a<AA; a++)
 					if(domainMotif->f[j][a]>0)
-						aaDistinct++; 
-				
+						aaDistinct++;
+
 				totalObs=0;
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++){
 					//populate observations
@@ -343,7 +343,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 				for(a=1; a<AA; a++){
 					obs_acids[a]=obs_acids[a]+obs_acids[a-1];
 				}
-			
+
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++){
 					//int dice = (int)floor((double)rand()/RAND_MAX*aaDistinct);
 					double dice = ((double)rand()/RAND_MAX);
@@ -411,19 +411,19 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 
 			GTObs=0;
 			for(n=0; n<RAND_MUTI_N; n++){
-				//Reset 
+				//Reset
 				for(a=0; a<AA; a++)
 				{	ttl_acids[a]=0; obs_acids[a]=0;}
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++)
 					rand_acids[p]=0;
-					
+
 				//Count the number of distinct amino acids in the corresponding amino acid column
 				int aaDistinct=0;
 				for(a=0; a<AA; a++)
 					if(domainMotif->f[j][a]>0)
-						aaDistinct++; 
-				
-				//Set up the shuffle 
+						aaDistinct++;
+
+				//Set up the shuffle
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++){
 					for(a=0; a<AA; a++)
 					{	residueShuffle[p][a] = individualMotifs[pssmAlignment->alignedIDs[p]]->f[j][a];
@@ -439,7 +439,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 					for(a=0; a<AA; a++)
 						pairwise_ij[b][a]=0;
 				}
-				//Calculate pairwise frequencies 
+				//Calculate pairwise frequencies
 				//Randomly pick one of the residue positions, and take the DNA motif in position p as its pair
 				for(p=0; p<pssmAlignment->GetNumAligned(); p++){
 					double dice = ((double)rand()/RAND_MAX);
@@ -476,7 +476,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 		}
 	}
 
-	
+
 	///////////////////////////////////////////////////////////////////
 	//print out the probability scores
 	printf("Probability of observing the above MI values\n\t");
@@ -496,7 +496,7 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 	delete rand_acids;
 	//////////////////////////////////////////////////////////////////
 */
-	
+
 
 	//Memory cleanup
 	for(b=0; b<B; b++)
@@ -518,9 +518,9 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 
 //Converts a single amino acid into it's integer (0 to 20)
 int ProteinDomains::char2num(char x) {
-   	int b;
+	int b;
 	b=tolower(x);
-	
+
 	if(b=='a')
 		return(0);
 	else if(b=='r')
@@ -562,7 +562,7 @@ int ProteinDomains::char2num(char x) {
 	else if(b=='v')
 		return(19);
 
-  return -1;
+	return -1;
 }
 
 //Destructor
@@ -576,5 +576,5 @@ ProteinDomains::~ProteinDomains()
 			delete individualMotifs[i];
 		}delete individualMotifs;
 	}
-	
+
 }

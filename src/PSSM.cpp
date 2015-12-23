@@ -48,7 +48,7 @@ void PSSM::RevCompPSSM(PSSM* out)
 {
 	out->len = len;
 	strcpy(out->name, name);
-	
+
 	for(int i=0; i<len; i++)
 	{
 		out->matrix[(len-i)-1][0] = matrix[i][3];
@@ -75,19 +75,19 @@ char PSSM::ColConsensus(int i)
 	two_base_l[4]='K';
 	two_base_l[5]='M';
 
-	
+
 	two_base_c[0]=x.probMatrix[i][1]+x.probMatrix[i][3];
 	two_base_c[1]=x.probMatrix[i][0]+x.probMatrix[i][2];
 	two_base_c[2]=x.probMatrix[i][0]+x.probMatrix[i][3];
 	two_base_c[3]=x.probMatrix[i][1]+x.probMatrix[i][2];
 	two_base_c[4]=x.probMatrix[i][2]+x.probMatrix[i][3];
 	two_base_c[5]=x.probMatrix[i][0]+x.probMatrix[i][1];
-*/	
+*/
 	sum=0;
 	for(j=0; j<4; j++)
 		sum+=matrix[i][j];
 
-	
+
 	if(matrix[i][0]/sum>=CONS1) {curr='A';}
 	else if(matrix[i][1]/sum>=CONS1) {curr='C';}
 	else if(matrix[i][2]/sum>=CONS1) {curr='G';}

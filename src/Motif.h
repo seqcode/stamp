@@ -66,10 +66,10 @@ public:
 
 	//Copy a motif
 	void CopyMotif(Motif* out);
-	
+
 	//Consensus letter for a column (taken from f)
 	char ColConsensus(int i);
-    
+
 	//Find the information content of a column in f
 	double Info(int i);
 
@@ -78,7 +78,7 @@ public:
 
 	//Print the motif's consensus
 	void PrintMotifConsensus();
-	
+
 	//log base 2
 	double log_2(double x){ return(log(x) / LOG_2);}
 

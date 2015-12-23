@@ -36,7 +36,7 @@
 #include "Motif.h"
 
 class ColumnComp{
-protected: 
+protected:
 	double max;
 	double min;
 	double expected;
@@ -48,7 +48,7 @@ public:
 	//Accessors
 	double GetMax(){return max;}
 	double GetMin(){return min;}
-	
+
 	//Actual comparison method
 	virtual double Compare(Motif* M_A, int colA, Motif* M_B, int colB)=0;
 
@@ -73,7 +73,7 @@ class ALLR : public ColumnComp
 public:
 	//Constructor
 	ALLR():ColumnComp(){max=2; min=-15; expected=0; /*max, min & expected unknown*/};
-	
+
 	//ALLR compare
 	double Compare(Motif* M_A, int colA, Motif* M_B, int colB);
 };
@@ -84,18 +84,18 @@ class ALLR_LL : public ColumnComp
 public:
 	//Constructor
 	ALLR_LL():ColumnComp(){max=2; min=-2; expected=0; /*max, min & expected unknown*/};
-	
+
 	//ALLR compare
 	double Compare(Motif* M_A, int colA, Motif* M_B, int colB);
 };
 
-//Pearson's Chi-squared 
+//Pearson's Chi-squared
 class ChiSq : public ColumnComp
 {
 public:
 	//Constructor
 	ChiSq():ColumnComp(){max=1; min=0; expected=0; /*max, min & expected unknown*/};
-	
+
 	//ALLR compare
 	double Compare(Motif* M_A, int colA, Motif* M_B, int colB);
 };
@@ -107,7 +107,7 @@ class SumSqDiff : public ColumnComp
 public:
 	//Constructor
 	SumSqDiff():ColumnComp(){max=2; min=0; expected=0; /*max, min & expected unknown*/};
-	
+
 	//ALLR compare
 	double Compare(Motif* M_A, int colA, Motif* M_B, int colB);
 };
@@ -118,7 +118,7 @@ class KullbackLieber : public ColumnComp
 public:
 	//Constructor
 	KullbackLieber():ColumnComp(){max=12; min=0; expected=0; /*max, min & expected unknown*/};
-	
+
 	//ALLR compare
 	double Compare(Motif* M_A, int colA, Motif* M_B, int colB);
 };

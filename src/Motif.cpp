@@ -80,7 +80,7 @@ void Motif::Reset()
 	for(i=0; i<len; i++)
 		for(j=0; j<B; j++)
 			pwm[i][j]=0;
-		
+
 	for(i=0; i<len; i++)
 		gaps[i]=0;
 	members=1;
@@ -96,7 +96,7 @@ void Motif::RevCompMotif(Motif* out)
 		out->members = members;
 		for(int i=0; i<len; i++)
 		{
-			out->f[(len-i)-1][0] = f[i][3]; out->n[(len-i)-1][0] = n[i][3]; out->pwm[(len-i)-1][0] = pwm[i][3]; 
+			out->f[(len-i)-1][0] = f[i][3]; out->n[(len-i)-1][0] = n[i][3]; out->pwm[(len-i)-1][0] = pwm[i][3];
 			out->f[(len-i)-1][3] = f[i][0]; out->n[(len-i)-1][3] = n[i][0]; out->pwm[(len-i)-1][3] = pwm[i][0];
 			out->f[(len-i)-1][1] = f[i][2]; out->n[(len-i)-1][1] = n[i][2]; out->pwm[(len-i)-1][1] = pwm[i][2];
 			out->f[(len-i)-1][2] = f[i][1]; out->n[(len-i)-1][2] = n[i][1]; out->pwm[(len-i)-1][2] = pwm[i][1];
@@ -113,10 +113,10 @@ void Motif::RevCompColumn(int i)
 {
 	double tmp_f, tmp_n, tmp_pwm;
 	tmp_f=f[i][0]; tmp_n=n[i][0]; tmp_pwm=pwm[i][0];
-	f[i][0] = f[i][3]; n[i][0] = n[i][3]; pwm[i][0] = pwm[i][3]; 
+	f[i][0] = f[i][3]; n[i][0] = n[i][3]; pwm[i][0] = pwm[i][3];
 	f[i][3]=tmp_f; n[i][3]=tmp_n; pwm[i][3]=tmp_pwm;
 	tmp_f=f[i][1]; tmp_n=n[i][1]; tmp_pwm=pwm[i][1];
-	f[i][1] = f[i][2]; n[i][1] = n[i][2]; pwm[i][1] = pwm[i][2]; 
+	f[i][1] = f[i][2]; n[i][1] = n[i][2]; pwm[i][1] = pwm[i][2];
 	f[i][2]=tmp_f; n[i][2]=tmp_n; pwm[i][2]=tmp_pwm;
 }
 //Clone a motif
@@ -153,7 +153,7 @@ char Motif::ColConsensus(int i)
 	two_base_l[4]='K';	two_base_l[5]='M';
 	three_base_l[0]='V'; three_base_l[1]='H';
 	three_base_l[2]='D'; three_base_l[3]='B';
-	
+
 	two_base_c[0]=f[i][1]+f[i][3];	two_base_c[1]=f[i][0]+f[i][2];
 	two_base_c[2]=f[i][0]+f[i][3];	two_base_c[3]=f[i][1]+f[i][2];
 	two_base_c[4]=f[i][2]+f[i][3];	two_base_c[5]=f[i][0]+f[i][1];
@@ -166,7 +166,7 @@ char Motif::ColConsensus(int i)
 	for(j=0; j<4; j++)
 		sum+=f[i][j];
 
-		
+
 	if(f[i][0]/sum>=CONS1) {curr='A';}
 	else if(f[i][1]/sum>=CONS1) {curr='C';}
 	else if(f[i][2]/sum>=CONS1) {curr='G';}
@@ -223,7 +223,7 @@ void Motif::PrintMotif(FILE* out, bool famNames)
 			printf("%c\n", ColConsensus(i));
 		}
 		printf("XX\n");
-	}else{	
+	}else{
 		if(famNames)
 			fprintf(out, "DE\t%s_%s\n", famName, name);
 		else
