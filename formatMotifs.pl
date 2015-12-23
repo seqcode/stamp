@@ -32,7 +32,7 @@ my $CONS2 = 0.8;
 my $coreLen = 4;
 if($#ARGV<=0){
     print "formatMotifs.pl\n\n\tUsage: perl formatMotifs.pl inputFile outputFile <min flanking info content> <output motif prefix> <output motif postfix>\n";
-    print "\n\tNote that converted motifs willbe *appended* to outputFile, not overwritten.\n\tVarious input formats are detectedand converted by the formatMotifs.pl script.\n\tSee the list of input formats here: http://www.benoslab.pitt.edu/stamp/help.html#input\n";
+    print "\n\tNote that converted motifs will be *appended* to the output file instead of overwriting it.\n\tVarious input formats are detected and converted to TRANSFAC-like format for usage with STAMP.\n\n\tThe list of supported input formats can be found at:\n\t    http://www.benoslab.pitt.edu/stamp/help.html#input\n";
 }else{
 my $inFilename = $ARGV[0];
 my $outFilename = $ARGV[1];
