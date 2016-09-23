@@ -1,4 +1,4 @@
-# STAMP v.1.2.
+# STAMP v.1.3.
 
 [STAMP](http://www.benoslab.pitt.edu/stamp/) is a tool for characterizing similarities between transcription factor binding motifs. 
 
@@ -121,6 +121,17 @@ the **formatMotifs.pl** script.
 
 ## Version history:
 
+ * **v.1.3:** 2016-09-23:
+    * Make parsing of STAMP specific TRANSFAC file more robust.
+      Before this change STAMP only processes TRANSFAC files
+      correctly when they looked exactly like this:
+        - motif starts with tag "DE  motif_name".
+        - "DE" tag is directly followed by matrix lines
+          (no "P0" or "PO" tag allowed).
+        - matrix lines are directly followed by a "XX" tag line.
+        - if other tags are present between "DE" and matrix lines or between matrix
+          lines and "XX", STAMP adds for each of those lines "0.0  0.0  0.0  0.0"
+          to the matrix (which was wrong).
  * **v.1.2:** 2015-05-27:
     * This version includes bug fixes and updated compilation instructons
       that [Gert Hulselmans (KU Leuven)](https://github.com/ghuls/) performed
@@ -130,9 +141,9 @@ the **formatMotifs.pl** script.
       comparisons to a single strand (e.g. for comparing RNA-binding motifs). 
 
  * **v.1.1 and earlier:** 2006 - 2008:
-	* STAMP was written by [Shaun Mahony](http://mahonylab.org/) during
-	  his time as a postdoc in
-	  [Takis Benos' lab at the University of Pittsburgh](http://www.benoslab.pitt.edu). 
+    * STAMP was written by [Shaun Mahony](http://mahonylab.org/) during
+      his time as a postdoc in
+      [Takis Benos' lab at the University of Pittsburgh](http://www.benoslab.pitt.edu). 
 
 
 ## Citations:
