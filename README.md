@@ -24,7 +24,7 @@ You can also use the formatMotifs.pl script to convert the outputs from various 
 ### Clone STAMP repository:
 
 ```bash
-git clone https://github.com/shaunmahony/stamp
+git clone https://github.com/seqcode/stamp
 
 cd stamp
 ```
@@ -152,6 +152,6 @@ the **formatMotifs.pl** script.
  * Personal website: http://mahonylab.org/
  * STAMP website: http://www.benoslab.pitt.edu/stamp/
  * Download STAMP:
-     * https://github.com/shaunmahony/stamp
+     * https://github.com/seqcode/stamp
      * http://www.csb.pitt.edu/Faculty/benos/?page_id=51
 
