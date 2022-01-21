@@ -511,8 +511,8 @@ void ProteinDomains::MutualInformation(MultiAlignRec* pssmAlignment, Motif* alig
 		delete MIConf[i];
 	delete Minfo;
 	delete MIConf;
-	delete ttl_acids;
-	delete obs_acids;
+	delete [] ttl_acids;
+	delete [] obs_acids;
 	delete posPref;
 }
 
