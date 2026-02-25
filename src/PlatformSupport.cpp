@@ -132,11 +132,11 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 	if(inp==NULL){perror("Cannot open input file");exit(1);}
 	while(fgets(line, LONG_STR, inp)){
 		//Read the first word.
-		sscanf(line, " %s", tag);
+		sscanf(line, " %499s", tag);
 
 		if(strlen(tag) >= 1 && (tag[0] >= 0x30 && tag[0] <= 0x39)){
 			//Assume it is a matrix line as the tag starts with a number.
-			sscanf(line, " %s %lf %lf %lf %lf", tag, &tmp_Motif->n[curr_cnt][0], &tmp_Motif->n[curr_cnt][1], &tmp_Motif->n[curr_cnt][2], &tmp_Motif->n[curr_cnt][3]);
+			sscanf(line, " %499s %lf %lf %lf %lf", tag, &tmp_Motif->n[curr_cnt][0], &tmp_Motif->n[curr_cnt][1], &tmp_Motif->n[curr_cnt][2], &tmp_Motif->n[curr_cnt][3]);
 			curr_cnt++;
 
 			//Reset has_DE_tag for the next motif.
@@ -169,7 +169,7 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 			{
 				// Set motif name if no DE tag was seen yet.
 				if (has_DE_tag == false) {
-					sscanf(line, " %s %s", tag, tmp_Motif->name);
+					sscanf(line, " %499s %499s", tag, tmp_Motif->name);
 					curr_cnt = 0;
 				}
 			}
@@ -178,13 +178,13 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 			{
 				if(famNames)
 				{
-					sscanf(line, " %s %s %s", tag, tmp_Motif->name, tmp_Motif->famName);
+					sscanf(line, " %499s %499s %499s", tag, tmp_Motif->name, tmp_Motif->famName);
 				}else if(useweighting){
-					sscanf(line, " %s %s %lf", tag, tmp_Motif->name, &tmpWeight);
+					sscanf(line, " %499s %499s %lf", tag, tmp_Motif->name, &tmpWeight);
 					tmp_Motif->weighting=tmpWeight;
 					total_weight += tmp_Motif->weighting;
 				}else{
-					sscanf(line, " %s %s", tag, tmp_Motif->name);
+					sscanf(line, " %499s %499s", tag, tmp_Motif->name);
 				}
 				curr_cnt = 0;
 				has_DE_tag = true;
@@ -356,11 +356,16 @@ gsl_histogram_set_ranges_uniform(score_histB, -20, 20);
 		free(std_dev[i]);
 		free(count[i]);
 		free(sampSq[i]);
+		free(max[i]);
+		free(min[i]);
 	}
 	free(sum);
 	free(std_dev);
 	free(count);
 	free(sampSq);
+	free(max);
+	free(min);
+	fclose(out);
 }
 
 //Read in the score distance distributions

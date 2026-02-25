@@ -285,7 +285,7 @@ double SmithWaterman::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int&
 
 				//Gap open calculation 1
 				tmp = currAlignMat[i-1][j].M - gapOpen;
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen!=1000) //Special case for a partial gap
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen!=1000) //Special case for a partial gap
 					tmp = currAlignMat[i-1][j].M - (gapOpen*(0.5));
 					//tmp = currAlignMat[i-1][j].M - (gapOpen*(1/(currMotif->gaps[i-1]+two->gaps[j-1]+1)));
 				if(currAlignMat[i][j].M<tmp){
@@ -296,7 +296,7 @@ double SmithWaterman::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, int&
 
 				//Gap open calculation 2
 				tmp = currAlignMat[i][j-1].M - gapOpen;
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen!=1000) //Special case for a partial gap
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen!=1000) //Special case for a partial gap
 					tmp = currAlignMat[i][j-1].M - (gapOpen*(0.5));
 					//tmp = currAlignMat[i][j-1].M - (gapOpen*(1/(currMotif->gaps[i-1]+two->gaps[j-1]+1)));
 				if(currAlignMat[i][j].M<tmp){
@@ -669,7 +669,7 @@ double NeedlemanWunsch::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, in
 				currMax = currAlignMat[i][j].M;
 
 				//Ix update
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen != 1000){
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen != 1000){
 					currAlignMat[i][j].Ix = currAlignMat[i-1][j].M - (gapOpen *0.5);//Special case for partial gaps incorporated
 					tmp = currAlignMat[i-1][j].Ix - (gapExtend *0.5);//Special case for partial gaps incorporated;
 				}else{
@@ -684,7 +684,7 @@ double NeedlemanWunsch::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2, in
 				}
 
 				//Iy update
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen != 1000){
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen != 1000){
 					currAlignMat[i][j].Iy = currAlignMat[i][j-1].M - (gapOpen *0.5);//Special case for partial gaps incorporated
 					tmp = currAlignMat[i][j-1].Iy - (gapExtend *0.5);//Special case for partial gaps incorporated;
 				}else{
@@ -840,7 +840,7 @@ double SmithWatermanAffine::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2
 				currMax = currAlignMat[i][j].M;
 
 				//Ix update
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen != 1000){
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen != 1000){
 					currAlignMat[i][j].Ix = currAlignMat[i-1][j].M - (gapOpen *0.5);//Special case for partial gaps incorporated
 					tmp = currAlignMat[i-1][j].Ix - (gapExtend *0.5);//Special case for partial gaps incorporated
 				}else{
@@ -855,7 +855,7 @@ double SmithWatermanAffine::AlignMotifs(Motif* one, Motif* two, int &i1, int &i2
 				}
 
 				//Iy update
-				if((currMotif->gaps[i-1]!=0 || two->gaps[i-1]!=0) && gapOpen != 1000){
+				if((currMotif->gaps[i-1]!=0 || two->gaps[j-1]!=0) && gapOpen != 1000){
 					currAlignMat[i][j].Iy = currAlignMat[i][j-1].M - (gapOpen *0.5);//Special case for partial gaps incorporated
 					tmp = currAlignMat[i][j-1].Iy - (gapExtend *0.5);//Special case for partial gaps incorporated
 				}else{

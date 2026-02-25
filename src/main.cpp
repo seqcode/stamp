@@ -106,20 +106,21 @@ int main (int argc, char *argv[])
 		}
 		if(strcmp(argv[i], "-out")==0) //Output file (for trees & similarity matching)
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(outFileName, argv[i+1]);}
+			{ strncpy(outFileName, argv[i+1], STR_LEN-1); outFileName[STR_LEN-1]='\0';}
 		}
 		if(strcmp(argv[i], "-genrand")==0) //Generate random motifs
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(randMatOut, argv[i+1]);}
+			{ strncpy(randMatOut, argv[i+1], STR_LEN-1); randMatOut[STR_LEN-1]='\0';}
 			genRandMotifs=true;
 		}
 		if(strcmp(argv[i], "-genscores")==0) //Generate simulation scores
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(scoresOut, argv[i+1]);}
+			{ strncpy(scoresOut, argv[i+1], STR_LEN-1); scoresOut[STR_LEN-1]='\0';}
 			genRandScores=true;
 		}
 		if((strcmp(argv[i], "-cc")) ==0)  //Choose a column comparison measure
-		{
+		{	if(argv[i+1]!=NULL)
+			{
 			if((strcmp(argv[i+1], "PCC"))==0 || (strcmp(argv[i+1], "pcc"))==0){
 				CC = new PearsonCorrelation(); //Pearson's correllation coefficient
 			}else if((strcmp(argv[i+1], "ALLR"))==0 || (strcmp(argv[i+1], "allr"))==0){
@@ -136,6 +137,7 @@ int main (int argc, char *argv[])
 				CC = new PearsonCorrelation(); //Default = PCC
 			}
 			colChosen=true;
+			}
 		}
 		//check for alignment settings
 		if((strcmp(argv[i], "-go")) ==0){ //Gap Open
@@ -174,20 +176,20 @@ int main (int argc, char *argv[])
 		//Input TF dataset name
 		if((strcmp(argv[i], "-tf")) ==0)
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(inputTFs, argv[i+1]);}
+			{ strncpy(inputTFs, argv[i+1], STR_LEN-1); inputTFs[STR_LEN-1]='\0';}
 			inputProvided=true;
 		}
 		//Score distribution file   Make an auto function for this!!!!!!!
 		if((strcmp(argv[i], "-sd")) ==0)
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(scoreDist, argv[i+1]);}
+			{ strncpy(scoreDist, argv[i+1], STR_LEN-1); scoreDist[STR_LEN-1]='\0';}
 			scoresProvided=true;
 		}
 		//Match input TFs against this dataset
 		if((strcmp(argv[i], "-match")) ==0)
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(matchTFs, argv[i+1]);}
-			if(argv[i+2]!=NULL && strcmp(argv[i+2], "fams")==0){
+			{ strncpy(matchTFs, argv[i+1], STR_LEN-1); matchTFs[STR_LEN-1]='\0';}
+			if(i+2 < argc && strcmp(argv[i+2], "fams")==0){
 				famNames=true;
 			}
 			simMatching=true;
@@ -199,7 +201,7 @@ int main (int argc, char *argv[])
 		//Matching input protein (Pfam) alignment dataset name
 		if((strcmp(argv[i], "-prot")) ==0)
 		{	if(argv[i+1]!=NULL)
-			{ strcpy(inputProteins, argv[i+1]);}
+			{ strncpy(inputProteins, argv[i+1], STR_LEN-1); inputProteins[STR_LEN-1]='\0';}
 			usingDomains = true;
 		}
 		//Run some tests
@@ -232,7 +234,8 @@ int main (int argc, char *argv[])
 	for(i=1; i<argc; i++)
 	{
 		if((strcmp(argv[i], "-align")) ==0)  //Choose an alignment method
-		{
+		{	if(argv[i+1]!=NULL)
+			{
 			if((strcmp(argv[i+1], "NW"))==0 || (strcmp(argv[i+1], "nw"))==0){
 				ALIGN = new NeedlemanWunsch(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 			}
@@ -246,10 +249,12 @@ int main (int argc, char *argv[])
 				ALIGN = new SmithWaterman(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 			}
 			alignChosen = true;
+			}
 		}
 		//Choose a multiple alignment method
 		if((strcmp(argv[i], "-ma")) ==0)
-		{
+		{	if(argv[i+1]!=NULL)
+			{
 			if((strcmp(argv[i+1], "PPA"))==0 || (strcmp(argv[i+1], "ppa"))==0){
 				MA = new ProgressiveProfileAlignment(outFileName, htmlOutput);
 				maChosen=true;
@@ -260,6 +265,7 @@ int main (int argc, char *argv[])
 			}
 			if((strcmp(argv[i+1], "NONE"))==0 || (strcmp(argv[i+1], "none"))==0){
 				maChosen=true; ma_off=true;
+			}
 			}
 		}
 	}
@@ -272,7 +278,8 @@ int main (int argc, char *argv[])
 	//Choose a tree-construction method
 	for(i=1; i<argc; i++)
 	{	if((strcmp(argv[i], "-tree")) ==0)
-		{
+		{	if(argv[i+1]!=NULL)
+			{
 			if((strcmp(argv[i+1], "UPGMA"))==0 || (strcmp(argv[i+1], "upgma"))==0){
 				T = new UPGMA(ALIGN);
 			}
@@ -286,6 +293,7 @@ int main (int argc, char *argv[])
 				T = new TopDownHClust(ALIGN, MA); neuralTree=true;
 			}
 			treeChosen=true;
+			}
 		}
 	}
 	if(!treeChosen)
