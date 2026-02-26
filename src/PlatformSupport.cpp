@@ -144,6 +144,12 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 		}else{
 			//Copy the contents of tmp_Motif to a new spot in currMotifs, when the last matrix line is read.
 			if(curr_cnt != 0){
+				if(currCnt == MAX_MOTIFS - 1)
+				{
+					printf("To many motifs in input file. Increase the value of MAX_MOTIFS in globals.h and recompile.\n");
+					exit(1);
+				}
+
 				currMotifs[currCnt] = new Motif(curr_cnt);
 				if(useweighting)
 					currMotifs[currCnt]->weighting=tmp_Motif->weighting;
@@ -194,6 +200,12 @@ int PlatformSupport::ReadTransfacFile(char* fn, bool famNames, bool input, bool 
 
 	//Copy the contents of the last tmp_Motif to a new spot in currMotifs, if this was not done yet
 	if(curr_cnt != 0){
+		if(currCnt == MAX_MOTIFS - 1)
+		{
+			printf("To many motifs in input file. Increase the value of MAX_MOTIFS in globals.h and recompile.\n");
+			exit(1);
+		}
+
 		currMotifs[currCnt] = new Motif(curr_cnt);
 		if(useweighting)
 			currMotifs[currCnt]->weighting=tmp_Motif->weighting;
