@@ -3,7 +3,7 @@ import { z } from "zod";
 export const columnMetricSchema = z.enum(["PCC", "ALLR", "ALLR_LL", "CS", "KL", "SSD"]);
 export const alignmentMethodSchema = z.enum(["SWU", "SWA", "SW", "NW"]);
 export const multipleAlignmentSchema = z.enum(["PPA", "IR", "NONE"]);
-export const treeMethodSchema = z.enum(["UPGMA", "SOTA", "NJ", "TDHC"]);
+export const treeMethodSchema = z.enum(["UPGMA", "NJ"]);
 
 export const stampParamsSchema = z.object({
   columnMetric: columnMetricSchema.default("PCC"),

@@ -13,7 +13,7 @@ export type MotifFormat = "transfac" | "meme" | "jaspar" | "modisco";
 export type ColumnMetric = "PCC" | "ALLR" | "ALLR_LL" | "CS" | "KL" | "SSD";
 export type AlignmentMethod = "SWU" | "SWA" | "SW" | "NW";
 export type MultipleAlignmentMethod = "PPA" | "IR" | "NONE";
-export type TreeMethod = "UPGMA" | "SOTA" | "NJ" | "TDHC";
+export type TreeMethod = "UPGMA" | "NJ";
 
 export interface StampParams {
   columnMetric: ColumnMetric;
@@ -57,6 +57,7 @@ export interface MatchEntry {
   alignmentQuery: string;
   alignmentMatch: string;
   matchMotifMatrix: number[][] | null;
+  queryMotifMatrix: number[][] | null;
 }
 
 export interface PairwiseScores {
@@ -64,11 +65,19 @@ export interface PairwiseScores {
   matrix: number[][];
 }
 
+export interface MultipleAlignmentEntry {
+  name: string;
+  alignedSequence: string; // consensus with gaps, e.g. "--ACTTCCGGT-"
+  originalMatrix: number[][]; // original PFM
+}
+
 export interface JobResults {
   treeNewick: string | null;
   matchPairs: MatchResult[];
   pairwiseScores: PairwiseScores | null;
   fbpProfile: number[][] | null;
+  multipleAlignment: MultipleAlignmentEntry[] | null;
+  inputMotifs: { name: string; matrix: number[][] }[];
   stampStdout: string;
 }
 

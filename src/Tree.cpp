@@ -733,39 +733,62 @@ void Neighbourjoin::BuildTree(PlatformSupport* p, bool treeTest)
 
 // *********************************************************************************** //
 
-//Private method: Print out the tree
+//Private method: Print out the tree (now with full names and internal node labels)
 void Tree::PostorderPrintTree(TreeNode* n, FILE* out, FILE* orderMat)
 {
-	char tmp_str[100];
 	double dist;
 
 	if(n->left != NULL){ fprintf(out, "("); PostorderPrintTree(n->left, out, orderMat); fprintf(out, ",");}
 	if(n->right != NULL){
 		PostorderPrintTree(n->right, out, orderMat);
-		//if(n->parent!=NULL){
-			//dist=n->parent->height-n->height;
-			dist=n->edge;
-		//}else{ dist =0; }
-		fprintf(out, "):%lf", fabs(dist)); //use this to print branch lengths
-		//fprintf(out, ")");
-		//printf("):%lf\n", dist);
+		dist=n->edge;
+		// Internal nodes now get labels (Internal_N)
+		fprintf(out, ")%s:%lf", n->profile ? n->profile->name : "", fabs(dist));
 	}if(n->leaf)
 	{
 		if(orderMat!=NULL)
 			n->profile->PrintMotif(orderMat);
 
-		sprintf(tmp_str, "%s", n->profile->name);
-		//Limit of 20chars for Phylip drawgram program
-		tmp_str[20]='\0';
-		//fprintf(out, "%s_%s:%lf", n->profile->famName, tmp_str, fabs(n->edge)); //use this to print branch lengths & family names
-		fprintf(out, "%s:%lf", tmp_str, fabs(n->edge)); //use this to print branch lengths
-		//fprintf(out, "%s", tmp_str);
-		//fprintf(out, "%s_%s:0.0", n->profile->famName, tmp_str);
-		//fprintf(out, "%s_%s:%lf", n->profile->famName, tmp_str, (n->parent->height - n->height));
-		//printf("%s:%lf\n", tmp_str, (n->parent->height - n->height));
+		// Full name — no more 20-char Phylip truncation
+		fprintf(out, "%s:%lf", n->profile->name, fabs(n->edge));
 	}else{
 		if(orderMat!=NULL)
 			n->profile->PrintMotif(orderMat);
+	}
+}
+
+//Private method: Print enhanced tree (labeled Newick) — same logic, used for webmode stdout
+void Tree::PostorderPrintEnhancedTree(TreeNode* n, FILE* out)
+{
+	double dist;
+
+	if(n->left != NULL){ fprintf(out, "("); PostorderPrintEnhancedTree(n->left, out); fprintf(out, ",");}
+	if(n->right != NULL){
+		PostorderPrintEnhancedTree(n->right, out);
+		dist=n->edge;
+		fprintf(out, ")%s:%lf", n->profile ? n->profile->name : "", fabs(dist));
+	}if(n->leaf)
+	{
+		fprintf(out, "%s:%lf", n->profile->name, fabs(n->edge));
+	}
+}
+
+//Private method: Postorder print internal profiles
+void Tree::PostorderPrintInternalProfiles(TreeNode* n, FILE* out)
+{
+	if(n->left != NULL) PostorderPrintInternalProfiles(n->left, out);
+	if(n->right != NULL) PostorderPrintInternalProfiles(n->right, out);
+
+	if(!n->leaf && n->profile != NULL){
+		fprintf(out, ">>INTERNAL_NODE\t%s\t%d\n", n->profile->name, n->nodeID);
+		fprintf(out, "DE\t%s\n", n->profile->name);
+		for(int i = 0; i < n->profile->len; i++){
+			fprintf(out, "%d\t", i);
+			for(int j = 0; j < B; j++)
+				fprintf(out, "%.4lf\t", n->profile->f[i][j]);
+			fprintf(out, "%c\n", n->profile->ColConsensus(i));
+		}
+		fprintf(out, "XX\n");
 	}
 }
 //Print the tree
@@ -784,6 +807,40 @@ void Tree::PrintTree(char* outFile)
 
 	if(orderMat!=NULL)
 		fclose(orderMat);
+	fclose(out);
+}
+
+//Print internal profiles to stdout in delimited section (webmode)
+void Tree::PrintInternalProfiles(FILE* out)
+{
+	if(root == NULL) return;
+	fprintf(out, ">>STAMP_INTERNAL_PROFILES_START\n");
+	PostorderPrintInternalProfiles(root, out);
+	fprintf(out, ">>STAMP_INTERNAL_PROFILES_END\n");
+}
+
+//Print labeled Newick tree to stdout in delimited section (webmode)
+void Tree::PrintEnhancedTree(FILE* out)
+{
+	if(root == NULL) return;
+	fprintf(out, ">>STAMP_LABELED_TREE_START\n");
+	PostorderPrintEnhancedTree(root, out);
+	fprintf(out, ";\n");
+	fprintf(out, ">>STAMP_LABELED_TREE_END\n");
+}
+
+//Write internal profiles to file (default mode)
+void Tree::WriteInternalProfiles(char* outPrefix)
+{
+	if(root == NULL) return;
+	char outFName[STR_LEN];
+	sprintf(outFName, "%s_internal_profiles.txt", outPrefix);
+	FILE* out = fopen(outFName, "w");
+	if(out == NULL){
+		fprintf(stderr, "Error: can't open output file %s\n", outFName);
+		return;
+	}
+	PostorderPrintInternalProfiles(root, out);
 	fclose(out);
 }
 
@@ -1106,16 +1163,14 @@ void Tree::PPAAlignment(TreeNode* n, TreeNode* start, int leaveOutID)
 		strcpy(n->alignment->alignedNames[0], n->profile->name);
 		strcpy(n->alignment->profileAlignment[0]->name, n->profile->name);
 		n->alignment->alignedIDs[0] = n->leafID;
+		n->alignment->alignedRC[0] = false;  // Leaf is always in forward orientation
 		//Fill alignSection
-		//printf("%s\t%d\n", n->profile->name, n->profile->GetLen());
 		for(z=0; z<n->profile->GetLen(); z++)
 			for(b=0; b<B; b++)
 				n->alignment->profileAlignment[0]->f[z][b]=n->profile->f[z][b];
-		//PrintMultipleAlignmentConsensus(n->alignment);
-	//	printf("leaf %s = %s\n",n->alignment->alignedNames[0], Plat->inputMotifs[n->alignment->alignedIDs[0]]->name);
 	}
 
-	if(!n->leaf)// && n->left->leaf && n->right->leaf)
+	if(!n->leaf)
 	{
 		Motif* revOne = new Motif(n->left->profile->GetLen());
 		n->left->profile->RevCompMotif(revOne);
@@ -1126,9 +1181,9 @@ void Tree::PPAAlignment(TreeNode* n, TreeNode* start, int leaveOutID)
 		n->members = n->left->members + n->right->members;
 		score = Aman->AlignMotifs2D(n->left->profile, n->right->profile, i1, i2, aL, forward1, forward2);
 		if(forward1){curr1=n->left->profile;}
-		else{curr1=revOne;}//printf("*R1*");}
+		else{curr1=revOne;}
 		if(forward2){curr2=n->right->profile;}
-		else{curr2 = revTwo;}//printf("*R2*");}
+		else{curr2 = revTwo;}
 
 		//Align and copy the basic (pairwise) alignment to the place holder
 		if(n->alignment!=NULL)
@@ -1141,10 +1196,14 @@ void Tree::PPAAlignment(TreeNode* n, TreeNode* start, int leaveOutID)
 			strcpy(n->alignment->alignedNames[b], n->left->alignment->alignedNames[b]);
 			strcpy(n->alignment->profileAlignment[b]->name,n->left->alignment->alignedNames[b]);
 			n->alignment->alignedIDs[b] = n->left->alignment->alignedIDs[b];
+			// RC propagation: XOR child's RC state with whether this subtree was reversed
+			n->alignment->alignedRC[b] = n->left->alignment->alignedRC[b] ^ (!forward1);
 		}for(b=0; b<n->right->alignment->GetNumAligned(); b++){
 			strcpy(n->alignment->alignedNames[b+n->left->alignment->GetNumAligned()], n->right->alignment->alignedNames[b]);
 			strcpy(n->alignment->profileAlignment[b+n->left->alignment->GetNumAligned()]->name, n->right->alignment->alignedNames[b]);
 			n->alignment->alignedIDs[b+n->left->alignment->GetNumAligned()] = n->right->alignment->alignedIDs[b];
+			// RC propagation: XOR child's RC state with whether this subtree was reversed
+			n->alignment->alignedRC[b+n->left->alignment->GetNumAligned()] = n->right->alignment->alignedRC[b] ^ (!forward2);
 		}
 		last0=-50; last1=-50;
 		antiZ=0;
@@ -1504,10 +1563,14 @@ MultiAlignRec* Tree::SingleProfileAddition(MultiAlignRec* alignment, Motif* two,
 		strcpy(newAlignment->alignedNames[b], alignment->alignedNames[b]);
 		strcpy(newAlignment->profileAlignment[b]->name, alignment->alignedNames[b]);
 		newAlignment->alignedIDs[b] = alignment->alignedIDs[b];
+		// RC propagation: XOR existing RC state with whether this alignment was reversed
+		newAlignment->alignedRC[b] = alignment->alignedRC[b] ^ (!forward1);
 	}
 	strcpy(newAlignment->alignedNames[alignment->GetNumAligned()], two->name);
 	strcpy(newAlignment->profileAlignment[alignment->GetNumAligned()]->name, two->name);
 	newAlignment->alignedIDs[alignment->GetNumAligned()] = twoID;
+	// The new motif's RC state: reverse-complemented if forward2 is false
+	newAlignment->alignedRC[alignment->GetNumAligned()] = !forward2;
 
 	last0=-50; last1=-50;
 	antiZ=0;
@@ -1618,6 +1681,7 @@ MultiAlignRec* Tree::SingleProfileSubtraction(MultiAlignRec* alignment, int remo
 			strcpy(newAlignment->alignedNames[a], alignment->alignedNames[i]);
 			strcpy(newAlignment->profileAlignment[a]->name, alignment->alignedNames[i]);
 			newAlignment->alignedIDs[a] = alignment->alignedIDs[i];
+			newAlignment->alignedRC[a] = alignment->alignedRC[i];  // Copy RC state
 			a++;
 		}
 	}

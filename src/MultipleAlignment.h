@@ -50,17 +50,21 @@ protected:
 	Alignment* A_man;
 	MultiAlignRec* completeAlignment;
 	bool htmlOutput;
+	bool webMode;
 	char outName[STR_LEN];
 
 public:
 	//Constructor
-	MultipleAlignment(char* outRoot, bool html){completeAlignment=NULL; htmlOutput = html; strcpy(outName, outRoot);}
+	MultipleAlignment(char* outRoot, bool html){completeAlignment=NULL; htmlOutput = html; webMode = false; strcpy(outName, outRoot);}
 
 	//Virtual building method
 	virtual MultiAlignRec* BuildAlignment(PlatformSupport* p, Alignment* a, Tree* curr_tree=NULL)=0;
 
 	//Import the platform handler (mainly used by the neural trees)
 	void ImportBasics(PlatformSupport* p, Alignment* a){Plat = p; A_man=a;}
+
+	//Set web mode (structured stdout output with delimiters)
+	void SetWebMode(bool wm){webMode = wm;}
 
 	//Handle pre-aligned profiles
 	MultiAlignRec* PreAlignedInput(PlatformSupport* p);
@@ -72,6 +76,13 @@ public:
 
 	//Print the alignment
 	void PrintMultipleAlignmentConsensus(MultiAlignRec* alignment=NULL);
+
+	//Print enhanced alignment with strand, offset, and full PFM data (webmode stdout)
+	void PrintEnhancedAlignment(MultiAlignRec* alignment=NULL);
+	//Print FBP profile to stdout in delimited section (webmode stdout)
+	void PrintFBPToStdout(Motif* fbp);
+	//Write enhanced alignment to file (default mode)
+	void WriteEnhancedAlignment(char* outPrefix, MultiAlignRec* alignment=NULL);
 
 	//Align a profile to an existing alignment and return the new alignment
 	MultiAlignRec* SingleProfileAddition(MultiAlignRec* alignment, Motif* two, int twoID);

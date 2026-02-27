@@ -15,8 +15,8 @@ export default function HomePage() {
   const [motifText, setMotifText] = useState("");
   const [params, setParams] = useState<StampParams>({ ...DEFAULT_PARAMS });
   const [matching, setMatching] = useState<MatchingConfig>({
-    enabled: false,
-    taxonGroups: [],
+    enabled: true,
+    taxonGroups: ["vertebrates"],
     topMatches: 5,
     customDbFileKey: null,
   });

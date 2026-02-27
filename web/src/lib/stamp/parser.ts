@@ -1,5 +1,5 @@
 import fs from "fs";
-import type { MatchResult, MatchEntry, PairwiseScores } from "@/types";
+import type { MatchResult, MatchEntry, PairwiseScores, MultipleAlignmentEntry } from "@/types";
 
 /**
  * Parse STAMP's Newick tree output file.
@@ -49,6 +49,7 @@ export function parseMatchPairs(filePath: string): MatchResult[] {
           alignmentQuery: parts[2].trim(),
           alignmentMatch: parts[3].trim(),
           matchMotifMatrix: null,
+          queryMotifMatrix: null,
         };
         current.matches.push(entry);
       }
@@ -228,4 +229,64 @@ export function parseFBP(filePath: string): number[][] | null {
   }
 
   return matrix.length > 0 ? matrix : null;
+}
+
+/**
+ * Parse the multiple alignment from STAMP stdout.
+ *
+ * Format in stdout (non-silent mode):
+ *   Multiple Alignment:
+ *   GABPA:	ACTTCCGGT
+ *   ELK4:	-CTTCCGG-
+ *   SPI1:	--TTCCGG-
+ *
+ * Returns array of { name, alignedSequence } entries.
+ */
+export function parseMultipleAlignment(
+  stdout: string
+): { name: string; alignedSequence: string }[] | null {
+  const lines = stdout.split(/\r?\n/);
+  let startIdx = -1;
+
+  // Find "Multiple Alignment:" header
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes("Multiple Alignment:")) {
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  if (startIdx === -1) return null;
+
+  const entries: { name: string; alignedSequence: string }[] = [];
+
+  for (let i = startIdx; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line === "") continue;
+
+    // Stop at next section headers
+    if (
+      line.startsWith("Alignments Finished") ||
+      line.startsWith("Tree Built") ||
+      line.startsWith("FBP") ||
+      line.startsWith("STAMP")
+    ) {
+      break;
+    }
+
+    // Parse "MotifName:\tAC-TTCCGGT" or "MotifName:  AC-TTCCGGT"
+    // Include IUPAC ambiguity codes: W, S, M, K, R, Y, B, D, H, V, N
+    const match = line.match(/^(.+?):\s+([ACGTWSMKRYBDHVN\-]+)\s*$/i);
+    if (match) {
+      entries.push({
+        name: match[1].trim(),
+        alignedSequence: match[2].trim(),
+      });
+    } else {
+      // If we've already collected some entries and hit a non-matching line, stop
+      if (entries.length > 0) break;
+    }
+  }
+
+  return entries.length > 0 ? entries : null;
 }

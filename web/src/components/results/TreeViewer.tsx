@@ -61,30 +61,33 @@ function parseNewick(str: string): TreeNode {
   return parseNode();
 }
 
-/**
- * Convert our tree to d3 hierarchy format.
- */
-function toHierarchy(node: TreeNode): d3.HierarchyNode<TreeNode> {
-  return d3.hierarchy(node, (d) => d.children);
-}
-
 export function TreeViewer({ newick }: TreeViewerProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
+  const treeDataRef = useRef<TreeNode | null>(null);
+
+  // Parse tree once and store in ref
+  useEffect(() => {
+    if (newick) {
+      treeDataRef.current = parseNewick(newick);
+    }
+  }, [newick]);
 
   const renderTree = useCallback(() => {
-    if (!svgRef.current || !newick) return;
+    if (!svgRef.current || !treeDataRef.current) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const tree = parseNewick(newick);
-    const root = toHierarchy(tree);
+    const tree = treeDataRef.current;
+
+    // d3.hierarchy accessor respects collapsed state (only returns children, not _children)
+    const root = d3.hierarchy(tree, (d: TreeNode) => d.children);
     const leafCount = root.leaves().length;
 
     const margin = { top: 20, right: 200, bottom: 20, left: 20 };
-    const height = Math.max(400, leafCount * 24);
+    const height = Math.max(400, leafCount * 30);
     const width = dimensions.width;
     setDimensions((d) => ({ ...d, height }));
 
@@ -108,7 +111,7 @@ export function TreeViewer({ newick }: TreeViewerProps) {
     svg.call(zoom);
     svg.call(zoom.transform, d3.zoomIdentity.translate(margin.left, margin.top));
 
-    // Draw links (right-angle)
+    // Draw links (right-angle elbow)
     g.selectAll(".link")
       .data(root.links())
       .join("path")
@@ -120,10 +123,11 @@ export function TreeViewer({ newick }: TreeViewerProps) {
         return `M${d.source.y},${d.source.x}H${d.target.y}V${d.target.x}`;
       });
 
-    // Draw nodes
+    // Draw all nodes
+    const allNodes = root.descendants();
     const nodes = g
       .selectAll(".node")
-      .data(root.descendants())
+      .data(allNodes)
       .join("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.y},${d.x})`);
@@ -131,15 +135,22 @@ export function TreeViewer({ newick }: TreeViewerProps) {
     // Node circles
     nodes
       .append("circle")
-      .attr("r", (d) => (d.children ? 3 : 4))
-      .attr("fill", (d) => (d.children ? "#999" : "#0074c6"))
+      .attr("r", (d) => {
+        if (d.data._children) return 5; // collapsed node
+        if (d.children) return 3; // internal node
+        return 4; // leaf node
+      })
+      .attr("fill", (d) => {
+        if (d.data._children) return "#ff7f0e"; // collapsed = orange
+        if (d.children) return "#999"; // internal
+        return "#0074c6"; // leaf
+      })
       .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-      .style("cursor", "pointer");
+      .attr("stroke-width", 1.5);
 
     // Leaf labels
     nodes
-      .filter((d) => !d.children)
+      .filter((d) => !d.children && !d.data._children)
       .append("text")
       .attr("x", 8)
       .attr("dy", "0.35em")
@@ -147,23 +158,37 @@ export function TreeViewer({ newick }: TreeViewerProps) {
       .attr("fill", "#333")
       .text((d) => d.data.name);
 
-    // Click to collapse/expand
+    // Collapsed node labels
     nodes
-      .filter((d) => !!d.children)
+      .filter((d) => !!d.data._children)
+      .append("text")
+      .attr("x", 8)
+      .attr("dy", "0.35em")
+      .attr("font-size", "11px")
+      .attr("fill", "#ff7f0e")
+      .attr("font-style", "italic")
+      .text((d) => {
+        const count = d.data._children?.length || 0;
+        return `${d.data.name || "subtree"} (${count} collapsed)`;
+      });
+
+    // Click handler for collapsible nodes (have children OR _children)
+    nodes
+      .filter((d) => !!d.data.children || !!d.data._children)
       .style("cursor", "pointer")
       .on("click", (_event, d) => {
         if (d.data._children) {
           // Expand
-          d.data.children = d.data._children as TreeNode[];
-          delete (d.data as TreeNode & { _children?: TreeNode[] })._children;
+          d.data.children = d.data._children;
+          d.data._children = undefined;
         } else if (d.data.children) {
           // Collapse
-          (d.data as TreeNode & { _children?: TreeNode[] })._children = d.data.children;
-          delete d.data.children;
+          d.data._children = d.data.children;
+          d.data.children = undefined;
         }
         renderTree();
       });
-  }, [newick, dimensions.width]);
+  }, [dimensions.width]);
 
   // Observe container width
   useEffect(() => {

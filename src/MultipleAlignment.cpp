@@ -160,7 +160,7 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 	{
 		alignment = completeAlignment;
 		if(alignment == NULL)
-		{	printf("Error: complete alignment not yet constructed!\n\n");
+		{	fprintf(stderr, "Error: complete alignment not yet constructed!\n\n");
 			exit(1);
 		}
 	}
@@ -170,6 +170,8 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 	int aL = alignment->GetAlignL();
 
 	if(aL>0){
+		if(webMode)
+			printf(">>STAMP_MULTI_ALIGN_CONSENSUS_START\n");
 		if(htmlOutput)
 			printf("<center><font face=\"Courier New\"><table border=\"0\" width=\"700\">");
 		for(int q=0; q<alignment->GetNumAligned(); q++){
@@ -195,7 +197,8 @@ void MultipleAlignment::PrintMultipleAlignmentConsensus(MultiAlignRec* alignment
 		printf("\n");
 		if(htmlOutput)
 			printf("</table></font></center>");
-
+		if(webMode)
+			printf(">>STAMP_MULTI_ALIGN_CONSENSUS_END\n");
 	}
 }
 
@@ -260,11 +263,14 @@ MultiAlignRec* ProgressiveProfileAlignment::BuildAlignment(PlatformSupport* p, A
 	//////////////////////////////////////////////////////////////////
 	PrintMultipleAlignmentConsensus(T->root->alignment);
 	strcpy(T->root->profile->name, "FBP");
-	char outFName[STR_LEN];
-	sprintf(outFName, "%sFBP.txt", outName);
-	FILE* out=fopen(outFName, "w");
-	T->root->profile->PrintMotif(out);
-	fclose(out);
+	// Only write FBP file when -out was provided (outName is non-empty)
+	if(strlen(outName) > 0){
+		char outFName[STR_LEN];
+		sprintf(outFName, "%sFBP.txt", outName);
+		FILE* out=fopen(outFName, "w");
+		T->root->profile->PrintMotif(out);
+		fclose(out);
+	}
 
 	return(T->root->alignment);
 }
@@ -288,6 +294,7 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 		strcpy(n->alignment->alignedNames[0], n->profile->name);
 		strcpy(n->alignment->profileAlignment[0]->name, n->profile->name);
 		n->alignment->alignedIDs[0] = n->leafID;
+		n->alignment->alignedRC[0] = false;  // Leaf is always in forward orientation
 		//Fill alignSection
 		for(z=0; z<n->profile->GetLen(); z++)
 			for(b=0; b<B; b++)
@@ -320,10 +327,14 @@ void ProgressiveProfileAlignment::PostorderAlignment(TreeNode* n, TreeNode* star
 			strcpy(n->alignment->alignedNames[b], n->left->alignment->alignedNames[b]);
 			strcpy(n->alignment->profileAlignment[b]->name,n->left->alignment->alignedNames[b]);
 			n->alignment->alignedIDs[b] = n->left->alignment->alignedIDs[b];
+			// RC propagation: XOR child's RC state with whether this subtree was reversed
+			n->alignment->alignedRC[b] = n->left->alignment->alignedRC[b] ^ (!forward1);
 		}for(b=0; b<n->right->alignment->GetNumAligned(); b++){
 			strcpy(n->alignment->alignedNames[b+n->left->alignment->GetNumAligned()], n->right->alignment->alignedNames[b]);
 			strcpy(n->alignment->profileAlignment[b+n->left->alignment->GetNumAligned()]->name, n->right->alignment->alignedNames[b]);
 			n->alignment->alignedIDs[b+n->left->alignment->GetNumAligned()] = n->right->alignment->alignedIDs[b];
+			// RC propagation: XOR child's RC state with whether this subtree was reversed
+			n->alignment->alignedRC[b+n->left->alignment->GetNumAligned()] = n->right->alignment->alignedRC[b] ^ (!forward2);
 		}
 		last0=-50; last1=-50;
 		antiZ=0;
@@ -494,11 +505,14 @@ MultiAlignRec* IterativeRefinementAlignment::BuildAlignment(PlatformSupport* p, 
 	PrintMultipleAlignmentConsensus(alignment);
 
 	strcpy(currProfile->name, "FBP");
-	char outFName[STR_LEN];
-	sprintf(outFName, "%sFBP.txt", outName);
-	FILE* out=fopen(outFName, "w");
-	currProfile->PrintMotif(out);
-	fclose(out);
+	// Only write FBP file when -out was provided (outName is non-empty)
+	if(strlen(outName) > 0){
+		char outFName[STR_LEN];
+		sprintf(outFName, "%sFBP.txt", outName);
+		FILE* out=fopen(outFName, "w");
+		currProfile->PrintMotif(out);
+		fclose(out);
+	}
 
 	if(currProfile!=NULL)
 		delete currProfile;
@@ -538,10 +552,14 @@ MultiAlignRec* MultipleAlignment::SingleProfileAddition(MultiAlignRec* alignment
 		strcpy(newAlignment->alignedNames[b], alignment->alignedNames[b]);
 		strcpy(newAlignment->profileAlignment[b]->name, alignment->alignedNames[b]);
 		newAlignment->alignedIDs[b] = alignment->alignedIDs[b];
+		// RC propagation: XOR existing RC state with whether this alignment was reversed
+		newAlignment->alignedRC[b] = alignment->alignedRC[b] ^ (!forward1);
 	}
 	strcpy(newAlignment->alignedNames[alignment->GetNumAligned()], two->name);
 	strcpy(newAlignment->profileAlignment[alignment->GetNumAligned()]->name, two->name);
 	newAlignment->alignedIDs[alignment->GetNumAligned()] = twoID;
+	// The new motif's RC state: reverse-complemented if forward2 is false
+	newAlignment->alignedRC[alignment->GetNumAligned()] = !forward2;
 
 	last0=-50; last1=-50;
 	antiZ=0;
@@ -652,6 +670,7 @@ MultiAlignRec* MultipleAlignment::SingleProfileSubtraction(MultiAlignRec* alignm
 			strcpy(newAlignment->alignedNames[a], alignment->alignedNames[i]);
 			strcpy(newAlignment->profileAlignment[a]->name, alignment->alignedNames[i]);
 			newAlignment->alignedIDs[a] = alignment->alignedIDs[i];
+			newAlignment->alignedRC[a] = alignment->alignedRC[i];  // Copy RC state
 			a++;
 		}
 	}
@@ -718,5 +737,128 @@ void MultipleAlignment::WeightedFBP(MultiAlignRec* alignment, Motif* currProfile
 
 	Plat->f_to_n(currProfile);
 	Plat->n_to_pwm(currProfile);
+}
+
+//Print enhanced alignment with strand, offset, and full PFM data to stdout (webmode)
+void MultipleAlignment::PrintEnhancedAlignment(MultiAlignRec* alignment)
+{
+	if(alignment == NULL){
+		alignment = completeAlignment;
+		if(alignment == NULL){
+			fprintf(stderr, "Error: complete alignment not yet constructed!\n");
+			return;
+		}
+	}
+
+	int z, b;
+	int aL = alignment->GetAlignL();
+
+	if(aL > 0){
+		printf(">>STAMP_ENHANCED_ALIGNMENT_START\n");
+		for(int q = 0; q < alignment->GetNumAligned(); q++){
+			// Print motif header: name, strand (+/-), original ID
+			printf(">>MOTIF\t%s\t%c\t%d\n",
+				alignment->alignedNames[q],
+				alignment->alignedRC[q] ? '-' : '+',
+				alignment->alignedIDs[q]);
+
+			// Print consensus string
+			printf(">>CONSENSUS\t");
+			for(z = 0; z < aL; z++){
+				if(alignment->profileAlignment[q]->f[z][0] == -1)
+					printf("-");
+				else
+					printf("%c", alignment->profileAlignment[q]->ColConsensus(z));
+			}
+			printf("\n");
+
+			// Print full PFM
+			printf(">>PFM_START\t%d\n", aL);
+			for(z = 0; z < aL; z++){
+				if(alignment->profileAlignment[q]->f[z][0] == -1){
+					printf("GAP\n");
+				}else{
+					for(b = 0; b < B; b++){
+						printf("%lf", alignment->profileAlignment[q]->f[z][b]);
+						if(b < B-1) printf("\t");
+					}
+					printf("\n");
+				}
+			}
+			printf(">>PFM_END\n");
+		}
+		printf(">>STAMP_ENHANCED_ALIGNMENT_END\n");
+	}
+}
+
+//Print FBP profile to stdout in delimited section (webmode)
+void MultipleAlignment::PrintFBPToStdout(Motif* fbp)
+{
+	if(fbp == NULL) return;
+
+	int i, j;
+	printf(">>STAMP_FBP_START\n");
+	printf("DE\t%s\n", fbp->name);
+	for(i = 0; i < fbp->len; i++){
+		printf("%d\t", i);
+		for(j = 0; j < B; j++)
+			printf("%.4lf\t", fbp->f[i][j]);
+		printf("%c\n", fbp->ColConsensus(i));
+	}
+	printf("XX\n");
+	printf(">>STAMP_FBP_END\n");
+}
+
+//Write enhanced alignment to file (default mode)
+void MultipleAlignment::WriteEnhancedAlignment(char* outPrefix, MultiAlignRec* alignment)
+{
+	if(alignment == NULL){
+		alignment = completeAlignment;
+		if(alignment == NULL) return;
+	}
+
+	int z, b;
+	int aL = alignment->GetAlignL();
+	if(aL <= 0) return;
+
+	char outFName[STR_LEN];
+	sprintf(outFName, "%s_enhanced_alignment.txt", outPrefix);
+	FILE* out = fopen(outFName, "w");
+	if(out == NULL){
+		fprintf(stderr, "Error: can't open output file %s\n", outFName);
+		return;
+	}
+
+	for(int q = 0; q < alignment->GetNumAligned(); q++){
+		fprintf(out, ">>MOTIF\t%s\t%c\t%d\n",
+			alignment->alignedNames[q],
+			alignment->alignedRC[q] ? '-' : '+',
+			alignment->alignedIDs[q]);
+
+		fprintf(out, ">>CONSENSUS\t");
+		for(z = 0; z < aL; z++){
+			if(alignment->profileAlignment[q]->f[z][0] == -1)
+				fprintf(out, "-");
+			else
+				fprintf(out, "%c", alignment->profileAlignment[q]->ColConsensus(z));
+		}
+		fprintf(out, "\n");
+
+		fprintf(out, ">>PFM_START\t%d\n", aL);
+		for(z = 0; z < aL; z++){
+			if(alignment->profileAlignment[q]->f[z][0] == -1){
+				fprintf(out, "GAP\n");
+			}else{
+				for(b = 0; b < B; b++){
+					fprintf(out, "%lf", alignment->profileAlignment[q]->f[z][b]);
+					if(b < B-1) fprintf(out, "\t");
+				}
+				fprintf(out, "\n");
+			}
+		}
+		fprintf(out, ">>PFM_END\n");
+	}
+
+	fclose(out);
 }
 

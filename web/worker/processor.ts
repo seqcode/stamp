@@ -12,6 +12,7 @@ import {
   parseMatchedTransfac,
   parsePairwiseScores,
   parseFBP,
+  parseMultipleAlignment,
 } from "../src/lib/stamp/parser";
 import type { StampJobData } from "../src/lib/queue/jobs";
 import type { JobResults } from "../src/types";
@@ -86,6 +87,22 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
     const matchPairs = parseMatchPairs(outputPrefix);
     const pairwiseScores = parsePairwiseScores(result.stdout);
     const fbpProfile = parseFBP(outputPrefix);
+    const multipleAlignmentRaw = parseMultipleAlignment(result.stdout);
+
+    // Build input motif lookup for query matrices
+    const inputMotifMap = new Map<string, number[][]>();
+    for (const m of motifs) {
+      inputMotifMap.set(m.name, m.matrix);
+    }
+
+    // Build multiple alignment with original matrices
+    const multipleAlignment = multipleAlignmentRaw
+      ? multipleAlignmentRaw.map((entry) => ({
+          name: entry.name,
+          alignedSequence: entry.alignedSequence,
+          originalMatrix: inputMotifMap.get(entry.name) || [],
+        }))
+      : null;
 
     // Enrich match results with motif matrices
     const matchedMotifs = parseMatchedTransfac(outputPrefix);
@@ -95,14 +112,24 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
         if (matrix) {
           entry.matchMotifMatrix = matrix;
         }
+        // Also attach the query motif matrix
+        entry.queryMotifMatrix = inputMotifMap.get(matchResult.queryName) || null;
       }
     }
+
+    // Store input motifs for display
+    const inputMotifsForResults = motifs.map((m) => ({
+      name: m.name,
+      matrix: m.matrix,
+    }));
 
     const results: JobResults = {
       treeNewick,
       matchPairs,
       pairwiseScores,
       fbpProfile,
+      multipleAlignment,
+      inputMotifs: inputMotifsForResults,
       stampStdout: result.stdout,
     };
 

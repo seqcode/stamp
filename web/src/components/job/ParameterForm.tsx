@@ -92,7 +92,6 @@ export function ParameterForm({ value, onChange }: ParameterFormProps) {
                 onChange={(e) => update({ treeMethod: e.target.value as StampParams["treeMethod"] })}
               >
                 <option value="UPGMA">UPGMA</option>
-                <option value="SOTA">SOTA - Self-Organizing Tree</option>
                 <option value="NJ">NJ - Neighbour-joining</option>
               </select>
             </div>

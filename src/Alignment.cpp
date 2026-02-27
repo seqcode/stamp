@@ -82,8 +82,11 @@ MultiAlignRec::MultiAlignRec(int nA, int aL)
 	alignL=aL;
 	alignedNames = new char*[numAligned];
 	alignedIDs = new int [numAligned];
-	for(i=0; i<numAligned; i++)
+	alignedRC = new bool[numAligned];
+	for(i=0; i<numAligned; i++){
 		alignedNames[i] = new char[STR_LEN];
+		alignedRC[i] = false;
+	}
 	profileAlignment = new Motif*[numAligned];
 	for(i=0; i<numAligned; i++){
 		profileAlignment[i]=new Motif(alignL);

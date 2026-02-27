@@ -7,9 +7,11 @@ import { JobProgress } from "@/components/job/JobProgress";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { SequenceLogo } from "@/components/motif/SequenceLogo";
+import { RCToggle } from "@/components/motif/RCToggle";
 import { TreeViewer } from "@/components/results/TreeViewer";
 import { MatchTable } from "@/components/results/MatchTable";
-import type { JobResults, ParsedMotif } from "@/types";
+import { MultipleAlignmentViewer } from "@/components/results/MultipleAlignmentViewer";
+import type { JobResults } from "@/types";
 
 interface JobData {
   jobId: string;
@@ -32,6 +34,8 @@ export default function JobPage() {
   const { status, error: sseError } = useJobStatus(jobId);
   const [job, setJob] = useState<JobData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fbpRc, setFbpRc] = useState(false);
+  const [inputRc, setInputRc] = useState(false);
 
   const fetchJob = useCallback(async () => {
     try {
@@ -102,14 +106,16 @@ export default function JobPage() {
             Submitted {new Date(job.createdAt).toLocaleString()}
           </p>
         </div>
-        {isComplete && (
-          <Button
-            variant="secondary"
-            onClick={() => window.open(`/api/jobs/${jobId}/download`, "_blank")}
-          >
-            Download ZIP
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {isComplete && (
+            <Button
+              variant="secondary"
+              onClick={() => window.open(`/api/jobs/${jobId}/download`, "_blank")}
+            >
+              Download ZIP
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Progress */}
@@ -130,14 +136,58 @@ export default function JobPage() {
             </Card>
           )}
 
+          {/* Multiple Alignment */}
+          {results.multipleAlignment && results.multipleAlignment.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Multiple Alignment</CardTitle>
+              </CardHeader>
+              <MultipleAlignmentViewer alignment={results.multipleAlignment} />
+            </Card>
+          )}
+
           {/* FBP Profile */}
           {results.fbpProfile && (
             <Card>
               <CardHeader>
-                <CardTitle>Familial Binding Profile (FBP)</CardTitle>
+                <div className="flex items-center justify-between w-full">
+                  <CardTitle>Familial Binding Profile (FBP)</CardTitle>
+                  <RCToggle active={fbpRc} onToggle={() => setFbpRc((v) => !v)} />
+                </div>
               </CardHeader>
               <div className="flex justify-center">
-                <SequenceLogo matrix={results.fbpProfile} height={120} />
+                <SequenceLogo
+                  matrix={results.fbpProfile}
+                  height={120}
+                  reverseComplement={fbpRc}
+                />
+              </div>
+            </Card>
+          )}
+
+          {/* Input Motifs */}
+          {results.inputMotifs && results.inputMotifs.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between w-full">
+                  <CardTitle>Input Motifs</CardTitle>
+                  <RCToggle active={inputRc} onToggle={() => setInputRc((v) => !v)} />
+                </div>
+              </CardHeader>
+              <div className="space-y-3">
+                {results.inputMotifs.map((motif) => (
+                  <div key={motif.name} className="flex items-center gap-3">
+                    <div className="w-28 text-right text-sm font-medium text-gray-700 flex-shrink-0 truncate" title={motif.name}>
+                      {motif.name}
+                    </div>
+                    <SequenceLogo
+                      matrix={motif.matrix}
+                      height={60}
+                      showAxes={false}
+                      reverseComplement={inputRc}
+                    />
+                  </div>
+                ))}
               </div>
             </Card>
           )}
@@ -149,18 +199,6 @@ export default function JobPage() {
                 <CardTitle>Similarity Matches</CardTitle>
               </CardHeader>
               <MatchTable matchPairs={results.matchPairs} />
-            </Card>
-          )}
-
-          {/* Raw Output */}
-          {results.stampStdout && (
-            <Card>
-              <CardHeader>
-                <CardTitle>STAMP Output</CardTitle>
-              </CardHeader>
-              <pre className="text-xs font-mono bg-gray-50 p-4 rounded-lg overflow-x-auto max-h-64 overflow-y-auto">
-                {results.stampStdout}
-              </pre>
             </Card>
           )}
         </>

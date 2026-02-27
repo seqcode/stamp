@@ -6,131 +6,252 @@ interface SequenceLogoProps {
   matrix: number[][]; // Each row is [A, C, G, T]
   height?: number;
   width?: number;
+  showAxes?: boolean;
+  reverseComplement?: boolean;
 }
 
-// Nucleotide colors
+// MEME-suite color scheme
 const COLORS: Record<string, string> = {
-  A: "#00A859",
-  C: "#0057B8",
-  G: "#F5B800",
-  T: "#E31937",
+  A: "#CC0000", // red
+  C: "#0000CC", // blue
+  G: "#FFB300", // orange
+  T: "#008000", // green
 };
 
 const LETTERS = ["A", "C", "G", "T"] as const;
 
 /**
- * Canvas-based sequence logo renderer.
- * Renders stacked letters scaled by information content.
+ * Reverse complement a PFM matrix.
+ * Reverse column order and swap A↔T, C↔G.
  */
-export function SequenceLogo({ matrix, height = 100, width }: SequenceLogoProps) {
+function reverseComplementMatrix(matrix: number[][]): number[][] {
+  return [...matrix].reverse().map(([a, c, g, t]) => [t, g, c, a]);
+}
+
+/**
+ * Rasterize a single letter: draw it at a large font size on an offscreen
+ * canvas, find exact pixel bounds, return the canvas and bounds.
+ * This approach (from MEME-suite) gives pixel-perfect letter placement
+ * with no clipping or baseline issues.
+ */
+function rasterizeLetter(
+  letter: string,
+  color: string,
+  fontSize: number
+): { canvas: HTMLCanvasElement; top: number; height: number } {
+  const pad = 20;
+  const font = `bold ${fontSize}px Helvetica, Arial, sans-serif`;
+  const canvas = document.createElement("canvas");
+  canvas.width = fontSize + 2 * pad;
+  canvas.height = fontSize + 2 * pad;
+  const ctx = canvas.getContext("2d")!;
+  const cx = Math.round(canvas.width / 2);
+  const baseline = Math.round(canvas.height - pad);
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.fillText(letter, cx, baseline);
+
+  // Scan pixel data to find exact vertical bounds
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let topLine = -1;
+  let bottomLine = -1;
+  for (let r = 0; r < canvas.height; r++) {
+    for (let c = 0; c < canvas.width; c++) {
+      if (data[(r * canvas.width + c) * 4 + 3] > 0) {
+        if (topLine === -1) topLine = r;
+        bottomLine = r;
+      }
+    }
+  }
+  const h = topLine >= 0 ? bottomLine - topLine + 1 : 0;
+  return { canvas, top: topLine, height: h };
+}
+
+// Cache rasterized letters to avoid re-creating every render
+const letterCache = new Map<
+  string,
+  { canvas: HTMLCanvasElement; top: number; height: number }
+>();
+
+function getCachedLetter(letter: string, color: string, fontSize: number) {
+  const key = `${letter}-${fontSize}`;
+  if (!letterCache.has(key)) {
+    letterCache.set(key, rasterizeLetter(letter, color, fontSize));
+  }
+  return letterCache.get(key)!;
+}
+
+/**
+ * Canvas-based sequence logo renderer using MEME-suite style rendering.
+ * Uses rasterized letter approach for pixel-perfect placement.
+ */
+export function SequenceLogo({
+  matrix,
+  height = 90,
+  width,
+  showAxes = true,
+  reverseComplement = false,
+}: SequenceLogoProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const posWidth = 30;
-  const canvasWidth = width || matrix.length * posWidth + 40;
-  const canvasHeight = height;
+  const displayMatrix = reverseComplement
+    ? reverseComplementMatrix(matrix)
+    : matrix;
+
+  const maxBits = 2;
+  const defaultStackW = 26;
+  const stackHeight = showAxes ? Math.max(height - 30, 50) : height - 4;
+
+  // Y-axis layout
+  const yLabelH = showAxes ? 12 : 0;
+  const yLabelSpacer = showAxes ? 3 : 0;
+  const yNumW = showAxes ? 14 : 0;
+  const yTicW = showAxes ? 5 : 0;
+  const yAxisTotal = yLabelH + yLabelSpacer + yNumW + yTicW;
+
+  // X-axis layout
+  const xNumH = showAxes ? 14 : 0;
+  const xNumAbove = showAxes ? 2 : 0;
+
+  const topPad = showAxes ? 8 : 2;
+
+  const canvasWidth =
+    width || yAxisTotal + displayMatrix.length * defaultStackW + 8;
+  const canvasHeight = topPad + stackHeight + xNumAbove + xNumH + 2;
+
+  // Effective column width
+  const effectiveStackW = width
+    ? (width - yAxisTotal - 8) / displayMatrix.length
+    : defaultStackW;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Handle high-DPI displays
+    // High-DPI
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvasWidth * dpr;
     canvas.height = canvasHeight * dpr;
     ctx.scale(dpr, dpr);
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
-
-    // Clear
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    const yAxisWidth = 30;
-    const plotWidth = canvasWidth - yAxisWidth - 5;
-    const plotHeight = canvasHeight - 20;
-    const effectivePosWidth = plotWidth / matrix.length;
-    const maxBits = 2;
+    // ---- Draw Y-axis ----
+    if (showAxes) {
+      ctx.save();
+      ctx.translate(0, topPad);
 
-    // Draw Y axis
-    ctx.fillStyle = "#666";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("2", yAxisWidth - 4, 14);
-    ctx.fillText("1", yAxisWidth - 4, plotHeight / 2 + 4);
-    ctx.fillText("0", yAxisWidth - 4, plotHeight + 4);
+      // "bits" label (rotated)
+      ctx.save();
+      ctx.font = `bold ${yLabelH}px Helvetica, Arial, sans-serif`;
+      ctx.fillStyle = "#333";
+      ctx.translate(yLabelH, stackHeight / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.fillText("bits", 0, 0);
+      ctx.restore();
 
-    // Axis line
-    ctx.strokeStyle = "#ccc";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(yAxisWidth, 5);
-    ctx.lineTo(yAxisWidth, plotHeight);
-    ctx.lineTo(canvasWidth - 5, plotHeight);
-    ctx.stroke();
+      // Tick marks and numbers
+      ctx.save();
+      ctx.translate(yLabelH + yLabelSpacer + yNumW, 0);
+      ctx.font = "bold 11px Helvetica, Arial, sans-serif";
+      ctx.fillStyle = "#333";
+      ctx.textAlign = "right";
 
-    // Draw each position
-    for (let pos = 0; pos < matrix.length; pos++) {
-      const [a, c, g, t] = matrix[pos];
+      const ticH = stackHeight / maxBits;
+      for (let i = 0; i <= maxBits; i++) {
+        const y = stackHeight - i * ticH;
+        ctx.fillText(`${i}`, -2, y + 4);
+        ctx.fillRect(0, y - 0.75, yTicW, 1.5);
+      }
+
+      // Vertical axis line
+      ctx.fillRect(yTicW - 1.5, 0, 1.5, stackHeight);
+      ctx.restore();
+
+      // Horizontal baseline
+      ctx.fillStyle = "#333";
+      ctx.fillRect(
+        yAxisTotal - 1.5,
+        stackHeight - 0.75,
+        canvasWidth - yAxisTotal,
+        1.5
+      );
+
+      ctx.restore();
+    }
+
+    // ---- Draw letter stacks ----
+    const rasterFontSize = 60;
+    for (let pos = 0; pos < displayMatrix.length; pos++) {
+      const [a, c, g, t] = displayMatrix[pos];
       const total = a + c + g + t;
       if (total === 0) continue;
 
-      // Compute frequencies
       const freqs = [a / total, c / total, g / total, t / total];
 
-      // Compute information content: IC = 2 + sum(f * log2(f))
+      // Information content
       let entropy = 0;
       for (const f of freqs) {
-        if (f > 0) {
-          entropy -= f * Math.log2(f);
-        }
+        if (f > 0) entropy -= f * Math.log2(f);
       }
       const ic = maxBits - entropy;
 
-      // Create letter-height pairs, sorted ascending
+      // Sorted ascending (smallest at bottom)
       const letterHeights = LETTERS.map((letter, idx) => ({
         letter,
-        height: freqs[idx] * ic,
+        h: freqs[idx] * ic,
       }))
-        .filter((l) => l.height > 0.01)
-        .sort((a, b) => a.height - b.height);
+        .filter((l) => l.h > 0.01)
+        .sort((a, b) => a.h - b.h);
 
-      // Draw stacked letters bottom to top
-      const x = yAxisWidth + pos * effectivePosWidth;
-      let yOffset = plotHeight;
+      const xBase = yAxisTotal + pos * effectiveStackW;
+      let yBottom = topPad + stackHeight;
 
-      for (const { letter, height: letterHeight } of letterHeights) {
-        const h = (letterHeight / maxBits) * plotHeight;
-        yOffset -= h;
+      for (const { letter, h: letterBits } of letterHeights) {
+        const drawH = (letterBits / maxBits) * stackHeight;
+        if (drawH < 1) {
+          yBottom -= drawH;
+          continue;
+        }
 
-        ctx.save();
-        ctx.fillStyle = COLORS[letter];
-        ctx.font = `bold ${Math.max(h * 0.9, 8)}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-
-        // Scale letter to fill the space
-        const measured = ctx.measureText(letter);
-        const scaleX = (effectivePosWidth * 0.8) / measured.width;
-        const scaleY = h / (measured.actualBoundingBoxDescent + measured.actualBoundingBoxAscent || h);
-
-        ctx.translate(x + effectivePosWidth / 2, yOffset);
-        ctx.scale(scaleX, scaleY);
-        ctx.fillText(letter, 0, 0);
-        ctx.restore();
+        const cached = getCachedLetter(letter, COLORS[letter], rasterFontSize);
+        if (cached.height > 0) {
+          ctx.drawImage(
+            cached.canvas,
+            0,
+            cached.top - 1,
+            cached.canvas.width,
+            cached.height + 1,
+            xBase,
+            yBottom - drawH,
+            effectiveStackW,
+            drawH
+          );
+        }
+        yBottom -= drawH;
       }
 
-      // Position label
-      ctx.fillStyle = "#999";
-      ctx.font = "8px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        String(pos + 1),
-        x + effectivePosWidth / 2,
-        plotHeight + 12
-      );
+      // Position numbers on x-axis (rotated like MEME)
+      if (showAxes) {
+        ctx.save();
+        ctx.translate(
+          xBase + effectiveStackW / 2,
+          topPad + stackHeight + xNumAbove
+        );
+        ctx.font = "bold 10px Helvetica, Arial, sans-serif";
+        ctx.fillStyle = "#333";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(`${pos + 1}`, 0, 0);
+        ctx.restore();
+      }
     }
-  }, [matrix, canvasWidth, canvasHeight]);
+  }, [displayMatrix, canvasWidth, canvasHeight, showAxes, stackHeight, effectiveStackW, topPad, xNumAbove, yAxisTotal, yLabelH, yLabelSpacer, yNumW, yTicW]);
 
   return (
     <canvas

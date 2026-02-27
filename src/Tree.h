@@ -96,6 +96,10 @@ protected:
 	void KillChildren(TreeNode* n);
 	//Method used to print the tree
 	void PostorderPrintTree(TreeNode* n, FILE* out, FILE* orderMat=NULL);
+	//Method used to print the labeled tree (with internal node names)
+	void PostorderPrintEnhancedTree(TreeNode* n, FILE* out);
+	//Method used to print internal profiles
+	void PostorderPrintInternalProfiles(TreeNode* n, FILE* out);
 	//Method used to print the node's children
 	void PostorderPrintNodes(TreeNode* n, FILE* out);
 	//Print the matrices and children names for a node
@@ -128,6 +132,12 @@ public:
 	void PrintTree(char* outName);
 	//Print the tree
 	void PrintNodes(char* outName);
+	//Print internal profiles to stdout in delimited section (webmode)
+	void PrintInternalProfiles(FILE* out);
+	//Print labeled Newick tree to stdout in delimited section (webmode)
+	void PrintEnhancedTree(FILE* out);
+	//Write internal profiles to file (default mode)
+	void WriteInternalProfiles(char* outPrefix);
 	//Accessor
 	double GetNodesMinCH(){return nodesMinCH;}
 	//Print the tree at a given level (number of nodes)
