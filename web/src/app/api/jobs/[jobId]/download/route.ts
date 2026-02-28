@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { Job } from "@/lib/db/models/Job";
+import { generateResultsHtml } from "@/lib/export/resultsHtml";
 import archiver from "archiver";
 import fs from "fs";
 import path from "path";
@@ -69,6 +70,17 @@ export async function GET(
       archive.append(JSON.stringify(job.results, null, 2), {
         name: "results.json",
       });
+    }
+
+    // Add self-contained HTML results page
+    if (job.results) {
+      const html = generateResultsHtml(
+        job.jobId,
+        job.params,
+        job.results,
+        job.createdAt?.toISOString?.() || job.createdAt
+      );
+      archive.append(html, { name: "results.html" });
     }
 
     archive.finalize();

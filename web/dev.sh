@@ -1,3 +1,3 @@
 #!/bin/bash
-export PATH="/usr/local/opt/node@22/bin:$PATH"
+export PATH="/opt/homebrew/bin:/opt/homebrew/opt/node/bin:$PATH"
 exec npx next dev

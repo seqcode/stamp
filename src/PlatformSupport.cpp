@@ -610,10 +610,16 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 	topIndices = new int[topX];
 	topForward1 = new bool[topX];
 	topForward2 = new bool[topX];
+	int* topQueryAlignStart = new int[topX];
+	int* topQueryAlignEnd = new int[topX];
+	int* topMatchAlignStart = new int[topX];
+	int* topMatchAlignEnd = new int[topX];
 	topAligns = new char**[topX];
 	for(x=0; x<topX; x++){
 		topScores[x]=0; topIndices[x]=0;
 		topForward1[x]=true; topForward2[x]=true;
+		topQueryAlignStart[x]=0; topQueryAlignEnd[x]=0;
+		topMatchAlignStart[x]=0; topMatchAlignEnd[x]=0;
 		topAligns[x]=new char*[2];
 		topAligns[x][0]=new char[STR_LEN];
 		topAligns[x][1]=new char[STR_LEN];
@@ -627,6 +633,8 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 		for(x=0; x<topX; x++){
 			topScores[x]=0; topIndices[x]=0;
 			topForward1[x]=true; topForward2[x]=true;
+			topQueryAlignStart[x]=0; topQueryAlignEnd[x]=0;
+			topMatchAlignStart[x]=0; topMatchAlignEnd[x]=0;
 			strcpy(topAligns[x][0], "");strcpy(topAligns[x][1], "");
 		}
 
@@ -644,6 +652,10 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 						topIndices[y]=topIndices[y-1];
 						topForward1[y]=topForward1[y-1];
 						topForward2[y]=topForward2[y-1];
+						topQueryAlignStart[y]=topQueryAlignStart[y-1];
+						topQueryAlignEnd[y]=topQueryAlignEnd[y-1];
+						topMatchAlignStart[y]=topMatchAlignStart[y-1];
+						topMatchAlignEnd[y]=topMatchAlignEnd[y-1];
 						strcpy(topAligns[y][0],topAligns[y-1][0]);
 						strcpy(topAligns[y][1],topAligns[y-1][1]);
 					}
@@ -664,6 +676,25 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 						matchMotifs[j]->RevCompMotif(two);
 					}
 					A_man->CopyAlignmentConsensus(one, two,topAligns[x][0], topAligns[x][1]);
+					// Compute alignment region bounds from alignSection
+					{
+						int qS = aL > 0 ? one->GetLen() : 0;
+						int qE = -1, mS = aL > 0 ? two->GetLen() : 0, mE = -1;
+						for(int z=0; z<aL; z++){
+							if(A_man->alignSection[0][z] >= 0){
+								if(A_man->alignSection[0][z] < qS) qS = A_man->alignSection[0][z];
+								if(A_man->alignSection[0][z] > qE) qE = A_man->alignSection[0][z];
+							}
+							if(A_man->alignSection[1][z] >= 0){
+								if(A_man->alignSection[1][z] < mS) mS = A_man->alignSection[1][z];
+								if(A_man->alignSection[1][z] > mE) mE = A_man->alignSection[1][z];
+							}
+						}
+						topQueryAlignStart[x] = qE >= 0 ? qS : 0;
+						topQueryAlignEnd[x] = qE >= 0 ? qE : 0;
+						topMatchAlignStart[x] = mE >= 0 ? mS : 0;
+						topMatchAlignEnd[x] = mE >= 0 ? mE : 0;
+					}
 					if(!forward1){
 						delete one;
 					}if(!forward2){
@@ -686,6 +717,9 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 				double Eval = 1-topScores[x];
 				printf(">>MATCH\t%s\t%.4e\t%c\t%c\n", currName, Eval,
 					topForward1[x] ? '+' : '-', topForward2[x] ? '+' : '-');
+				printf(">>MATCH_REGION\t%d\t%d\t%d\t%d\t%d\t%d\n",
+					inputMotifs[i]->len, topQueryAlignStart[x], topQueryAlignEnd[x],
+					matchMotifs[topIndices[x]]->len, topMatchAlignStart[x], topMatchAlignEnd[x]);
 				printf(">>QUERY_CONSENSUS\t%s\n", topAligns[x][0]);
 				printf(">>MATCH_CONSENSUS\t%s\n", topAligns[x][1]);
 				// Print matched motif PFM
@@ -725,6 +759,10 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 	delete [] topIndices;
 	delete [] topForward1;
 	delete [] topForward2;
+	delete [] topQueryAlignStart;
+	delete [] topQueryAlignEnd;
+	delete [] topMatchAlignStart;
+	delete [] topMatchAlignEnd;
 	for(x=0; x<topX; x++){
 		delete [] topAligns[x][0];delete [] topAligns[x][1];
 		delete [] topAligns[x];

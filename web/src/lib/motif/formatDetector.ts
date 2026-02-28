@@ -23,27 +23,68 @@ export function detectMotifFormat(text: string): MotifFormat | null {
     }
   }
 
-  // JASPAR format: starts with ">" and next lines are A/C/G/T rows with brackets
-  if (head[0]?.trim().startsWith(">")) {
-    // Check if the next line looks like JASPAR (starts with A [ or A\t[)
-    for (let i = 1; i < Math.min(head.length, 5); i++) {
-      const clean = head[i]?.trim().replace(/[\[\]]/g, "");
-      const parts = clean?.split(/\s+/);
-      if (parts && parts[0] && ["A", "C", "G", "T"].includes(parts[0].toUpperCase())) {
-        return "jaspar";
-      }
-    }
-    // Could be JASPAR with raw PSSM format (> header, then 4-column rows)
-    // For now, still classify as JASPAR since it uses the ">" header
-    return "jaspar";
-  }
-
   // TRANSFAC format: look for DE, NA, PO, P0, AC tags
   for (const line of head) {
     const parts = line.trim().split(/\s+/);
     if (["DE", "NA", "PO", "P0", "AC"].includes(parts[0])) {
       return "transfac";
     }
+  }
+
+  // Aligned FASTA: starts with ">" and following lines are bare DNA/IUPAC sequences
+  // (no brackets, no tab-separated numbers like JASPAR)
+  if (head[0]?.trim().startsWith(">")) {
+    // Check lines after the ">" header
+    let hasJasparPattern = false;
+    let hasBareSequences = false;
+
+    for (let i = 1; i < Math.min(lines.length, 10); i++) {
+      const trimmed = lines[i].trim();
+      if (trimmed.startsWith(">")) continue; // Another header
+
+      // JASPAR pattern: "A [" or "A\t[" or bare base letter followed by numbers
+      if (/^[ACGT]\s*[\[\(]/.test(trimmed)) {
+        hasJasparPattern = true;
+        break;
+      }
+
+      // Check if line has tab/space-separated numbers (JASPAR raw PSSM)
+      const clean = trimmed.replace(/[\[\]]/g, "");
+      const parts = clean.split(/\s+/);
+      if (parts[0] && ["A", "C", "G", "T"].includes(parts[0].toUpperCase()) && parts.length > 2) {
+        const allNums = parts.slice(1).every((p) => !isNaN(Number(p)));
+        if (allNums) {
+          hasJasparPattern = true;
+          break;
+        }
+      }
+
+      // Bare DNA/IUPAC sequence line?
+      if (/^[ACGTURYSWKMBDHVNacgturyswkmbdhvn\-]+$/.test(trimmed)) {
+        hasBareSequences = true;
+      }
+    }
+
+    if (hasJasparPattern) {
+      return "jaspar";
+    }
+    if (hasBareSequences) {
+      return "aligned-fasta";
+    }
+
+    // Fallback for ">" prefix: assume JASPAR
+    return "jaspar";
+  }
+
+  // Consensus format: all non-empty lines are purely IUPAC characters
+  // (no tabs, no spaces, no digits — just DNA/IUPAC letters)
+  // Check this AFTER TRANSFAC and MEME to avoid false positives
+  const nonEmptyLines = lines.filter((l) => l.trim() !== "");
+  const allIupac = nonEmptyLines.every((l) =>
+    /^[ACGTURYSWKMBDHVNacgturyswkmbdhvn]+$/.test(l.trim())
+  );
+  if (allIupac && nonEmptyLines.length > 0) {
+    return "consensus";
   }
 
   // If lines look like matrix data (4-6 numeric columns), assume TRANSFAC

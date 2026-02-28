@@ -3,6 +3,8 @@ import { parseTransfac } from "./transfac";
 import { parseMeme } from "./meme";
 import { parseJaspar } from "./jaspar";
 import { parseModisco } from "./modisco";
+import { parseConsensus } from "./consensus";
+import { parseAlignedFasta } from "./alignedFasta";
 import { detectMotifFormat } from "../formatDetector";
 
 /**
@@ -17,7 +19,7 @@ export function parseMotifs(
   if (!detected) {
     throw new Error(
       "Could not detect motif format. " +
-        "Please ensure your input is in TRANSFAC, MEME, or JASPAR format."
+        "Please ensure your input is in TRANSFAC, MEME, JASPAR, consensus, or aligned FASTA format."
     );
   }
 
@@ -35,6 +37,12 @@ export function parseMotifs(
       break;
     case "modisco":
       motifs = parseModisco(text);
+      break;
+    case "consensus":
+      motifs = parseConsensus(text);
+      break;
+    case "aligned-fasta":
+      motifs = parseAlignedFasta(text);
       break;
     default:
       throw new Error(`Unsupported motif format: ${detected}`);
@@ -54,3 +62,5 @@ export { parseTransfac } from "./transfac";
 export { parseMeme } from "./meme";
 export { parseJaspar } from "./jaspar";
 export { parseModisco } from "./modisco";
+export { parseConsensus } from "./consensus";
+export { parseAlignedFasta } from "./alignedFasta";

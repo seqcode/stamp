@@ -8,6 +8,9 @@ interface SequenceLogoProps {
   width?: number;
   showAxes?: boolean;
   reverseComplement?: boolean;
+  /** Optional [startCol, endCol] inclusive range (0-based into display matrix)
+   *  to highlight. Positions outside this range render at reduced opacity. */
+  highlightRange?: [number, number];
 }
 
 // MEME-suite color scheme
@@ -40,14 +43,13 @@ function rasterizeLetter(
   fontSize: number
 ): { canvas: HTMLCanvasElement; top: number; height: number } {
   const pad = 20;
-  const font = `bold ${fontSize}px Helvetica, Arial, sans-serif`;
   const canvas = document.createElement("canvas");
   canvas.width = fontSize + 2 * pad;
   canvas.height = fontSize + 2 * pad;
   const ctx = canvas.getContext("2d")!;
   const cx = Math.round(canvas.width / 2);
   const baseline = Math.round(canvas.height - pad);
-  ctx.font = font;
+  ctx.font = `bold ${fontSize}px Helvetica, Arial, sans-serif`;
   ctx.fillStyle = color;
   ctx.textAlign = "center";
   ctx.fillText(letter, cx, baseline);
@@ -92,14 +94,20 @@ export function SequenceLogo({
   width,
   showAxes = true,
   reverseComplement = false,
+  highlightRange,
 }: SequenceLogoProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const displayMatrix = reverseComplement
     ? reverseComplementMatrix(matrix)
     : matrix;
 
+  // When RC is active and highlightRange is set, flip the range
+  const effectiveHighlight = highlightRange && reverseComplement
+    ? [displayMatrix.length - 1 - highlightRange[1], displayMatrix.length - 1 - highlightRange[0]] as [number, number]
+    : highlightRange;
+
   const maxBits = 2;
-  const defaultStackW = 26;
+  const defaultStackW = 20;
   const stackHeight = showAxes ? Math.max(height - 30, 50) : height - 4;
 
   // Y-axis layout
@@ -184,12 +192,54 @@ export function SequenceLogo({
       ctx.restore();
     }
 
+    // ---- Detect internal vs edge gaps ----
+    // Find first and last non-zero columns to distinguish internal gaps from edge gaps
+    let firstNonZero = -1;
+    let lastNonZero = -1;
+    for (let pos = 0; pos < displayMatrix.length; pos++) {
+      const [a, c, g, t] = displayMatrix[pos];
+      if (a + c + g + t > 0) {
+        if (firstNonZero === -1) firstNonZero = pos;
+        lastNonZero = pos;
+      }
+    }
+
     // ---- Draw letter stacks ----
     const rasterFontSize = 60;
+    let positionLabel = 0; // Track position label separately (only count non-edge-gap columns)
     for (let pos = 0; pos < displayMatrix.length; pos++) {
       const [a, c, g, t] = displayMatrix[pos];
       const total = a + c + g + t;
-      if (total === 0) continue;
+      const xBase = yAxisTotal + pos * effectiveStackW;
+
+      // Determine if this position is outside the highlight range (faded)
+      const isFaded = effectiveHighlight != null &&
+        (pos < effectiveHighlight[0] || pos > effectiveHighlight[1]);
+
+      if (total === 0) {
+        // Zero column: internal gap → grey block, edge gap → skip
+        if (firstNonZero !== -1 && pos > firstNonZero && pos < lastNonZero) {
+          // Internal gap — draw grey block
+          ctx.globalAlpha = isFaded ? 0.25 : 1.0;
+          ctx.fillStyle = "#E5E7EB";
+          ctx.fillRect(
+            xBase + 1,
+            topPad,
+            effectiveStackW - 2,
+            stackHeight
+          );
+          ctx.globalAlpha = 1.0;
+        }
+        // Edge gaps: skip entirely (empty space)
+        continue;
+      }
+
+      positionLabel++;
+
+      // Set alpha for faded positions
+      if (isFaded) {
+        ctx.globalAlpha = 0.25;
+      }
 
       const freqs = [a / total, c / total, g / total, t / total];
 
@@ -208,7 +258,6 @@ export function SequenceLogo({
         .filter((l) => l.h > 0.01)
         .sort((a, b) => a.h - b.h);
 
-      const xBase = yAxisTotal + pos * effectiveStackW;
       let yBottom = topPad + stackHeight;
 
       for (const { letter, h: letterBits } of letterHeights) {
@@ -235,6 +284,11 @@ export function SequenceLogo({
         yBottom -= drawH;
       }
 
+      // Reset alpha
+      if (isFaded) {
+        ctx.globalAlpha = 1.0;
+      }
+
       // Position numbers on x-axis (rotated like MEME)
       if (showAxes) {
         ctx.save();
@@ -247,11 +301,11 @@ export function SequenceLogo({
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`${pos + 1}`, 0, 0);
+        ctx.fillText(`${positionLabel}`, 0, 0);
         ctx.restore();
       }
     }
-  }, [displayMatrix, canvasWidth, canvasHeight, showAxes, stackHeight, effectiveStackW, topPad, xNumAbove, yAxisTotal, yLabelH, yLabelSpacer, yNumW, yTicW]);
+  }, [displayMatrix, canvasWidth, canvasHeight, showAxes, stackHeight, effectiveStackW, topPad, xNumAbove, xNumH, yAxisTotal, yLabelH, yLabelSpacer, yNumW, yTicW, effectiveHighlight]);
 
   return (
     <canvas

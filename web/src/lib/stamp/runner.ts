@@ -4,8 +4,12 @@ import type { StampParams } from "@/types";
 
 const execFileAsync = promisify(execFile);
 
-const STAMP_BINARY = process.env.STAMP_BINARY || "stamp";
-const JOB_TIMEOUT_MS = Number(process.env.JOB_TIMEOUT_MS) || 300000; // 5 minutes
+function getStampBinary() {
+  return process.env.STAMP_BINARY || "stamp";
+}
+function getJobTimeout() {
+  return Number(process.env.JOB_TIMEOUT_MS) || 300000;
+}
 
 export interface StampRunOptions {
   inputFile: string;
@@ -31,9 +35,12 @@ export async function runStamp(
 ): Promise<StampRunResult> {
   const args = buildArgs(options);
 
+  const binaryPath = getStampBinary();
+  const timeout = getJobTimeout();
+
   try {
-    const { stdout, stderr } = await execFileAsync(STAMP_BINARY, args, {
-      timeout: JOB_TIMEOUT_MS,
+    const { stdout, stderr } = await execFileAsync(binaryPath, args, {
+      timeout,
       maxBuffer: 50 * 1024 * 1024, // 50MB output buffer
     });
 
@@ -48,7 +55,7 @@ export async function runStamp(
 
     if (err.killed) {
       throw new Error(
-        `STAMP process was killed (timeout after ${JOB_TIMEOUT_MS / 1000}s)`
+        `STAMP process was killed (timeout after ${timeout / 1000}s)`
       );
     }
 
@@ -103,8 +110,8 @@ function buildArgs(options: StampRunOptions): string[] {
   // Tree building
   args.push("-tree", params.treeMethod);
 
-  // Always print pairwise scores
-  args.push("-printpairwise");
+  // Webmode: structured stdout output with all results in delimited sections
+  args.push("-webmode");
 
   // Similarity matching
   if (options.matchFile) {

@@ -2,8 +2,9 @@ import type { StampParams } from "@/types";
 import path from "path";
 import fs from "fs";
 
-const SCORE_DISTS_DIR =
-  process.env.SCORE_DISTS_DIR || path.resolve(process.cwd(), "../ScoreDists");
+function getScoreDistsDir() {
+  return process.env.SCORE_DISTS_DIR || path.resolve(process.cwd(), "../ScoreDists");
+}
 
 /**
  * Select the correct score distribution file based on STAMP parameters.
@@ -36,7 +37,7 @@ export function selectScoreDistFile(params: StampParams): string {
     filename += ".scores";
   }
 
-  const filePath = path.join(SCORE_DISTS_DIR, filename);
+  const filePath = path.join(getScoreDistsDir(), filename);
 
   // Check if the exact file exists
   if (fs.existsSync(filePath)) {
@@ -46,7 +47,7 @@ export function selectScoreDistFile(params: StampParams): string {
   // Try without _oa suffix if not found with it
   if (overlapAlign && alignmentMethod !== "SWU") {
     const altFilename = filename.replace("_oa.scores", ".scores");
-    const altPath = path.join(SCORE_DISTS_DIR, altFilename);
+    const altPath = path.join(getScoreDistsDir(), altFilename);
     if (fs.existsSync(altPath)) {
       return altPath;
     }
@@ -55,7 +56,7 @@ export function selectScoreDistFile(params: StampParams): string {
   // Try with _oa suffix if not found without it
   if (!overlapAlign && alignmentMethod !== "SWU") {
     const altFilename = filename.replace(".scores", "_oa.scores");
-    const altPath = path.join(SCORE_DISTS_DIR, altFilename);
+    const altPath = path.join(getScoreDistsDir(), altFilename);
     if (fs.existsSync(altPath)) {
       return altPath;
     }
@@ -85,11 +86,11 @@ function formatNumber(n: number): string {
  * List all available score distribution files.
  */
 export function listAvailableScoreDists(): string[] {
-  if (!fs.existsSync(SCORE_DISTS_DIR)) {
+  if (!fs.existsSync(getScoreDistsDir())) {
     return [];
   }
   return fs
-    .readdirSync(SCORE_DISTS_DIR)
+    .readdirSync(getScoreDistsDir())
     .filter((f) => f.endsWith(".scores"))
     .sort();
 }

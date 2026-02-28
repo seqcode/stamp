@@ -6,7 +6,7 @@ export interface ParsedMotif {
   format: MotifFormat;
 }
 
-export type MotifFormat = "transfac" | "meme" | "jaspar" | "modisco";
+export type MotifFormat = "transfac" | "meme" | "jaspar" | "modisco" | "consensus" | "aligned-fasta";
 
 // ── STAMP Parameter Types ──
 
@@ -54,10 +54,18 @@ export interface MatchResult {
 export interface MatchEntry {
   name: string;
   evalue: number;
+  queryStrand: string;
+  matchStrand: string;
   alignmentQuery: string;
   alignmentMatch: string;
   matchMotifMatrix: number[][] | null;
   queryMotifMatrix: number[][] | null;
+  queryLength: number;
+  queryAlignStart: number;
+  queryAlignEnd: number;
+  matchLength: number;
+  matchAlignStart: number;
+  matchAlignEnd: number;
 }
 
 export interface PairwiseScores {
@@ -67,8 +75,9 @@ export interface PairwiseScores {
 
 export interface MultipleAlignmentEntry {
   name: string;
-  alignedSequence: string; // consensus with gaps, e.g. "--ACTTCCGGT-"
-  originalMatrix: number[][]; // original PFM
+  strand: string;             // "+" or "-"
+  id: number;
+  alignedMatrix: number[][];  // Aligned PFM from STAMP (gaps → [0,0,0,0])
 }
 
 export interface JobResults {
@@ -77,6 +86,7 @@ export interface JobResults {
   pairwiseScores: PairwiseScores | null;
   fbpProfile: number[][] | null;
   multipleAlignment: MultipleAlignmentEntry[] | null;
+  internalProfiles: { name: string; id: number; matrix: number[][] }[] | null;
   inputMotifs: { name: string; matrix: number[][] }[];
   stampStdout: string;
 }

@@ -1,3 +1,6 @@
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import mongoose from "mongoose";

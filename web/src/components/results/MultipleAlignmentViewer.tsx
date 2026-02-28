@@ -10,36 +10,8 @@ interface MultipleAlignmentViewerProps {
 }
 
 /**
- * Build an aligned PFM from the original matrix and the gap-annotated alignment string.
- * Gaps ("-") become zero-count columns [0,0,0,0].
- * Non-gap characters map sequentially to original PFM positions.
- */
-function buildAlignedMatrix(
-  alignedSequence: string,
-  originalMatrix: number[][]
-): number[][] {
-  const aligned: number[][] = [];
-  let origIdx = 0;
-
-  for (const ch of alignedSequence) {
-    if (ch === "-") {
-      aligned.push([0, 0, 0, 0]);
-    } else {
-      if (origIdx < originalMatrix.length) {
-        aligned.push(originalMatrix[origIdx]);
-        origIdx++;
-      } else {
-        aligned.push([0, 0, 0, 0]);
-      }
-    }
-  }
-
-  return aligned;
-}
-
-/**
  * Display multiple alignment as stacked, aligned sequence logos.
- * Each motif logo is padded with gap columns to show relative alignment.
+ * Each motif's alignedMatrix comes pre-built from STAMP (gaps are [0,0,0,0]).
  */
 export function MultipleAlignmentViewer({ alignment }: MultipleAlignmentViewerProps) {
   const [rc, setRc] = useState(false);
@@ -48,8 +20,8 @@ export function MultipleAlignmentViewer({ alignment }: MultipleAlignmentViewerPr
     return <p className="text-sm text-gray-500">No alignment data available.</p>;
   }
 
-  const alignLen = alignment[0]?.alignedSequence.length || 0;
-  const posWidth = 24;
+  const alignLen = alignment[0]?.alignedMatrix.length || 0;
+  const posWidth = 20;
   const logoWidth = alignLen * posWidth;
 
   return (
@@ -58,28 +30,24 @@ export function MultipleAlignmentViewer({ alignment }: MultipleAlignmentViewerPr
         <RCToggle active={rc} onToggle={() => setRc((v) => !v)} />
       </div>
       <div className="space-y-1">
-        {alignment.map((entry) => {
-          const alignedMatrix = buildAlignedMatrix(
-            entry.alignedSequence,
-            entry.originalMatrix
-          );
-          return (
-            <div key={entry.name} className="flex items-center gap-3">
-              <div className="w-28 text-right text-sm font-medium text-gray-700 flex-shrink-0 truncate" title={entry.name}>
-                {entry.name}
-              </div>
-              <div className="flex-shrink-0">
-                <SequenceLogo
-                  matrix={alignedMatrix}
-                  height={50}
-                  width={logoWidth}
-                  showAxes={false}
-                  reverseComplement={rc}
-                />
-              </div>
+        {alignment.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-3">
+            <div className="w-32 text-right text-sm font-medium text-gray-700 flex-shrink-0 truncate" title={entry.name}>
+              {entry.name}
+              <span className="ml-1 text-xs text-gray-400">
+                ({entry.strand})
+              </span>
             </div>
-          );
-        })}
+            <div className="flex-shrink-0">
+              <SequenceLogo
+                matrix={entry.alignedMatrix}
+                height={80}
+                width={logoWidth}
+                reverseComplement={rc}
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

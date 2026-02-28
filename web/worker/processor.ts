@@ -6,14 +6,7 @@ import { Motif } from "../src/lib/db/models/Motif";
 import { toStampTransfac } from "../src/lib/motif/converter";
 import { selectScoreDistFile } from "../src/lib/stamp/scoreDistSelector";
 import { runStamp } from "../src/lib/stamp/runner";
-import {
-  parseTreeFile,
-  parseMatchPairs,
-  parseMatchedTransfac,
-  parsePairwiseScores,
-  parseFBP,
-  parseMultipleAlignment,
-} from "../src/lib/stamp/parser";
+import { parseWebmodeOutput } from "../src/lib/stamp/parser";
 import type { StampJobData } from "../src/lib/queue/jobs";
 import type { JobResults } from "../src/types";
 
@@ -75,6 +68,16 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       matchTop: matching.topMatches,
     });
 
+    console.log(`STAMP exit code: ${result.exitCode}, stdout length: ${result.stdout.length}, stderr length: ${result.stderr.length}`);
+    if (result.stdout.length < 200) {
+      console.log(`STAMP stdout: ${result.stdout}`);
+    } else {
+      console.log(`STAMP stdout (first 200): ${result.stdout.substring(0, 200)}`);
+    }
+    if (result.stderr) {
+      console.log(`STAMP stderr: ${result.stderr}`);
+    }
+
     if (result.exitCode !== 0 && result.stderr) {
       throw new Error(`STAMP exited with code ${result.exitCode}: ${result.stderr}`);
     }
@@ -82,37 +85,19 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
     // Update status to processing results
     await JobModel.updateOne({ jobId }, { status: "processing_results" });
 
-    // Parse results
-    const treeNewick = parseTreeFile(outputPrefix);
-    const matchPairs = parseMatchPairs(outputPrefix);
-    const pairwiseScores = parsePairwiseScores(result.stdout);
-    const fbpProfile = parseFBP(outputPrefix);
-    const multipleAlignmentRaw = parseMultipleAlignment(result.stdout);
+    // Parse webmode structured output
+    const parsed = parseWebmodeOutput(result.stdout);
 
-    // Build input motif lookup for query matrices
+    // Build input motif lookup for enriching match results with query matrices
     const inputMotifMap = new Map<string, number[][]>();
     for (const m of motifs) {
       inputMotifMap.set(m.name, m.matrix);
     }
 
-    // Build multiple alignment with original matrices
-    const multipleAlignment = multipleAlignmentRaw
-      ? multipleAlignmentRaw.map((entry) => ({
-          name: entry.name,
-          alignedSequence: entry.alignedSequence,
-          originalMatrix: inputMotifMap.get(entry.name) || [],
-        }))
-      : null;
-
-    // Enrich match results with motif matrices
-    const matchedMotifs = parseMatchedTransfac(outputPrefix);
+    // Enrich match results with query motif matrices from input
+    const matchPairs = parsed.matchDetails || [];
     for (const matchResult of matchPairs) {
       for (const entry of matchResult.matches) {
-        const matrix = matchedMotifs.get(entry.name);
-        if (matrix) {
-          entry.matchMotifMatrix = matrix;
-        }
-        // Also attach the query motif matrix
         entry.queryMotifMatrix = inputMotifMap.get(matchResult.queryName) || null;
       }
     }
@@ -124,11 +109,12 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
     }));
 
     const results: JobResults = {
-      treeNewick,
+      treeNewick: parsed.tree,
       matchPairs,
-      pairwiseScores,
-      fbpProfile,
-      multipleAlignment,
+      pairwiseScores: parsed.pairwise,
+      fbpProfile: parsed.fbp,
+      multipleAlignment: parsed.enhancedAlignment,
+      internalProfiles: parsed.internalProfiles,
       inputMotifs: inputMotifsForResults,
       stampStdout: result.stdout,
     };
