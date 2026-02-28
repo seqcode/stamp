@@ -80,7 +80,7 @@ var letterCache = {};
 function rasterizeLetter(letter, color, fontSize) {
   var key = letter + '-' + fontSize;
   if (letterCache[key]) return letterCache[key];
-  var pad = 20;
+  var pad = 5;
   var canvas = document.createElement('canvas');
   canvas.width = fontSize + 2 * pad;
   canvas.height = fontSize + 2 * pad;

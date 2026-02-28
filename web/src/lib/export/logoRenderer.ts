@@ -23,7 +23,7 @@ function rasterizeLetter(
   color: string,
   fontSize: number,
 ): { canvas: HTMLCanvasElement; top: number; height: number } {
-  const pad = 20;
+  const pad = 5;
   const canvas = document.createElement("canvas");
   canvas.width = fontSize + 2 * pad;
   canvas.height = fontSize + 2 * pad;
