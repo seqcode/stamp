@@ -21,8 +21,8 @@ export default function RootLayout({
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-gray-200 bg-white">
             <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-              <a href="/" className="text-xl font-bold text-gray-900">
-                STAMP
+              <a href="/" className="flex items-center gap-2">
+                <img src="/stamp-logo.jpg" alt="STAMP" className="h-14" />
               </a>
               <nav className="flex gap-6 text-sm text-gray-600">
                 <a href="/" className="hover:text-gray-900">
@@ -41,7 +41,7 @@ export default function RootLayout({
           </header>
           <main className="flex-1">{children}</main>
           <footer className="border-t border-gray-200 bg-gray-50 py-6 text-center text-sm text-gray-500">
-            STAMP v1.3 &mdash; Similarity, Tree-building, &amp; Alignment of
+            STAMP v2.0 &mdash; Similarity, Tree-building, &amp; Alignment of
             Motifs and Profiles
           </footer>
         </div>

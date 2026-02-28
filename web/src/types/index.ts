@@ -66,6 +66,10 @@ export interface MatchEntry {
   matchLength: number;
   matchAlignStart: number;
   matchAlignEnd: number;
+  dbSource?: string;      // e.g. "JASPAR"
+  dbId?: string;          // e.g. "MA0139.1"
+  dbUrl?: string;         // e.g. "https://jaspar.elixir.no/matrix/MA0139.1"
+  dbCollection?: string;  // e.g. "CORE"
 }
 
 export interface PairwiseScores {

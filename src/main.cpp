@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 //
-// STAMP version 1.3
+// STAMP version 2.0
 //
 // Written By: Shaun Mahony
 // Bug fixes by: Gert Hulselmans
@@ -96,7 +96,7 @@ int main (int argc, char *argv[])
 	}
 
 	//Welcome message
-	if(!silent && !htmlOutput && !webMode){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Biochemistry & Molecular Biology\n\tPenn State University\n\tVersion 1.3 (September 2016)\n\n");}
+	if(!silent && !htmlOutput && !webMode){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Biochemistry & Molecular Biology\n\tPenn State University\n\tVersion 2.0\n\n");}
 
 	if(argc ==1) //First and Foremost, the help option
 	{	DisplayHelp();

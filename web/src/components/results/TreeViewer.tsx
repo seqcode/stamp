@@ -1,18 +1,20 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
-import * as d3 from "d3";
+import { useRef, useEffect, useState } from "react";
+import { SequenceLogo } from "@/components/motif/SequenceLogo";
 import { Button } from "@/components/ui/Button";
+import type { MultipleAlignmentEntry } from "@/types";
 
 interface TreeViewerProps {
   newick: string;
+  alignment?: MultipleAlignmentEntry[];
+  internalProfiles?: { name: string; id: number; matrix: number[][] }[];
 }
 
 interface TreeNode {
   name: string;
   branchLength: number;
   children?: TreeNode[];
-  _children?: TreeNode[];
 }
 
 /**
@@ -26,17 +28,16 @@ function parseNewick(str: string): TreeNode {
     const node: TreeNode = { name: "", branchLength: 0 };
 
     if (s[i] === "(") {
-      i++; // skip (
+      i++;
       node.children = [];
       node.children.push(parseNode());
       while (s[i] === ",") {
-        i++; // skip ,
+        i++;
         node.children.push(parseNode());
       }
       i++; // skip )
     }
 
-    // Parse name
     let name = "";
     while (i < s.length && s[i] !== ":" && s[i] !== "," && s[i] !== ")" && s[i] !== ";") {
       name += s[i];
@@ -44,9 +45,8 @@ function parseNewick(str: string): TreeNode {
     }
     node.name = name.trim();
 
-    // Parse branch length
     if (s[i] === ":") {
-      i++; // skip :
+      i++;
       let len = "";
       while (i < s.length && s[i] !== "," && s[i] !== ")" && s[i] !== ";") {
         len += s[i];
@@ -61,152 +61,157 @@ function parseNewick(str: string): TreeNode {
   return parseNode();
 }
 
-export function TreeViewer({ newick }: TreeViewerProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
-  const treeDataRef = useRef<TreeNode | null>(null);
+/**
+ * Get all leaf nodes in left-to-right order.
+ */
+function getLeaves(node: TreeNode): TreeNode[] {
+  if (!node.children || node.children.length === 0) return [node];
+  const leaves: TreeNode[] = [];
+  for (const child of node.children) {
+    leaves.push(...getLeaves(child));
+  }
+  return leaves;
+}
 
-  // Parse tree once and store in ref
-  useEffect(() => {
-    if (newick) {
-      treeDataRef.current = parseNewick(newick);
+/**
+ * Compute max depth (sum of branch lengths from root to deepest leaf).
+ */
+function getMaxDepth(node: TreeNode, uniform: boolean): number {
+  if (!node.children || node.children.length === 0) return 0;
+  const edgeLen = uniform ? 1 : undefined;
+  return Math.max(
+    ...node.children.map((c) => (edgeLen ?? c.branchLength) + getMaxDepth(c, uniform))
+  );
+}
+
+interface LayoutNode {
+  node: TreeNode;
+  depthFromRoot: number; // cumulative branch-length distance from root
+  y: number;            // vertical position (row index)
+  isLeaf: boolean;
+  children?: { layoutNode: LayoutNode; treeNode: TreeNode }[];
+}
+
+/**
+ * Layout the tree. Returns an array of layout nodes with depth and y positions.
+ * All leaves are forced to the same depth (maxDepth) for ultrametric display.
+ * When `uniform` is true, every edge has length 1 (cladogram mode).
+ */
+function layoutTree(root: TreeNode, uniform: boolean): { nodes: LayoutNode[]; maxDepth: number } {
+  const leaves = getLeaves(root);
+  const maxDepth = getMaxDepth(root, uniform);
+  const allNodes: LayoutNode[] = [];
+
+  // Assign y positions to leaves (evenly spaced)
+  const leafYMap = new Map<TreeNode, number>();
+  leaves.forEach((leaf, i) => {
+    leafYMap.set(leaf, i);
+  });
+
+  function layout(node: TreeNode, depthFromRoot: number): LayoutNode {
+    if (!node.children || node.children.length === 0) {
+      const y = leafYMap.get(node)!;
+      const ln: LayoutNode = {
+        node,
+        depthFromRoot: maxDepth, // Force ultrametric: all leaves at maxDepth
+        y,
+        isLeaf: true,
+      };
+      allNodes.push(ln);
+      return ln;
     }
-  }, [newick]);
 
-  const renderTree = useCallback(() => {
-    if (!svgRef.current || !treeDataRef.current) return;
+    const childLayouts: { layoutNode: LayoutNode; treeNode: TreeNode }[] = [];
+    for (const child of node.children) {
+      const edgeLen = uniform ? 1 : child.branchLength;
+      const childLayout = layout(child, depthFromRoot + edgeLen);
+      childLayouts.push({ layoutNode: childLayout, treeNode: child });
+    }
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+    const childYs = childLayouts.map((c) => c.layoutNode.y);
+    const y = (Math.min(...childYs) + Math.max(...childYs)) / 2;
 
-    const tree = treeDataRef.current;
+    const ln: LayoutNode = {
+      node,
+      depthFromRoot,
+      y,
+      isLeaf: false,
+      children: childLayouts,
+    };
+    allNodes.push(ln);
+    return ln;
+  }
 
-    // d3.hierarchy accessor respects collapsed state (only returns children, not _children)
-    const root = d3.hierarchy(tree, (d: TreeNode) => d.children);
-    const leafCount = root.leaves().length;
+  layout(root, 0);
+  return { nodes: allNodes, maxDepth };
+}
 
-    const margin = { top: 20, right: 200, bottom: 20, left: 20 };
-    const height = Math.max(400, leafCount * 30);
-    const width = dimensions.width;
-    setDimensions((d) => ({ ...d, height }));
+export function TreeViewer({
+  newick,
+  alignment,
+  internalProfiles,
+}: TreeViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [containerWidth, setContainerWidth] = useState(900);
+  const [uniformBranches, setUniformBranches] = useState(false);
 
-    const treeLayout = d3
-      .cluster<TreeNode>()
-      .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
-
-    treeLayout(root);
-
-    // Add zoom behavior
-    const g = svg
-      .attr("width", width)
-      .attr("height", height)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const zoom = d3.zoom<SVGSVGElement, unknown>().scaleExtent([0.3, 5]).on("zoom", (event) => {
-      g.attr("transform", event.transform);
-    });
-
-    svg.call(zoom);
-    svg.call(zoom.transform, d3.zoomIdentity.translate(margin.left, margin.top));
-
-    // Draw links (right-angle elbow)
-    g.selectAll(".link")
-      .data(root.links())
-      .join("path")
-      .attr("class", "link")
-      .attr("fill", "none")
-      .attr("stroke", "#999")
-      .attr("stroke-width", 1.5)
-      .attr("d", (d) => {
-        return `M${d.source.y},${d.source.x}H${d.target.y}V${d.target.x}`;
-      });
-
-    // Draw all nodes
-    const allNodes = root.descendants();
-    const nodes = g
-      .selectAll(".node")
-      .data(allNodes)
-      .join("g")
-      .attr("class", "node")
-      .attr("transform", (d) => `translate(${d.y},${d.x})`);
-
-    // Node circles
-    nodes
-      .append("circle")
-      .attr("r", (d) => {
-        if (d.data._children) return 5; // collapsed node
-        if (d.children) return 3; // internal node
-        return 4; // leaf node
-      })
-      .attr("fill", (d) => {
-        if (d.data._children) return "#ff7f0e"; // collapsed = orange
-        if (d.children) return "#999"; // internal
-        return "#0074c6"; // leaf
-      })
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5);
-
-    // Leaf labels
-    nodes
-      .filter((d) => !d.children && !d.data._children)
-      .append("text")
-      .attr("x", 8)
-      .attr("dy", "0.35em")
-      .attr("font-size", "12px")
-      .attr("fill", "#333")
-      .text((d) => d.data.name);
-
-    // Collapsed node labels
-    nodes
-      .filter((d) => !!d.data._children)
-      .append("text")
-      .attr("x", 8)
-      .attr("dy", "0.35em")
-      .attr("font-size", "11px")
-      .attr("fill", "#ff7f0e")
-      .attr("font-style", "italic")
-      .text((d) => {
-        const count = d.data._children?.length || 0;
-        return `${d.data.name || "subtree"} (${count} collapsed)`;
-      });
-
-    // Click handler for collapsible nodes (have children OR _children)
-    nodes
-      .filter((d) => !!d.data.children || !!d.data._children)
-      .style("cursor", "pointer")
-      .on("click", (_event, d) => {
-        if (d.data._children) {
-          // Expand
-          d.data.children = d.data._children;
-          d.data._children = undefined;
-        } else if (d.data.children) {
-          // Collapse
-          d.data._children = d.data.children;
-          d.data.children = undefined;
-        }
-        renderTree();
-      });
-  }, [dimensions.width]);
-
-  // Observe container width
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setDimensions((d) => ({ ...d, width: entry.contentRect.width }));
+        setContainerWidth(entry.contentRect.width);
       }
     });
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    renderTree();
-  }, [renderTree]);
+  // Parse tree
+  const tree = parseNewick(newick);
+  const { nodes: layoutNodes, maxDepth } = layoutTree(tree, uniformBranches);
+  const leaves = getLeaves(tree);
+
+  // Build lookup maps
+  const alignmentMap = new Map<string, MultipleAlignmentEntry>();
+  if (alignment) {
+    for (const entry of alignment) {
+      alignmentMap.set(entry.name, entry);
+    }
+  }
+
+  const profileMap = new Map<string, number[][]>();
+  if (internalProfiles) {
+    for (const p of internalProfiles) {
+      profileMap.set(p.name, p.matrix);
+    }
+  }
+
+  // Layout constants
+  const leafLogoHeight = 50;
+  const leafLogoWidth = 200;
+  const internalLogoHeight = 40;
+  const internalLogoWidth = 120;
+  const leafNameWidth = 100;
+  const rowHeight = leafLogoHeight + 12; // logo + spacing
+  const treeAreaWidth = Math.max(200, containerWidth - leafNameWidth - leafLogoWidth - 60);
+  const leftMargin = leafNameWidth + leafLogoWidth + 20;
+  const rightMargin = 40;
+  const topMargin = 20;
+
+  const totalHeight = leaves.length * rowHeight + topMargin * 2;
+  const treeXScale = maxDepth > 0 ? treeAreaWidth / maxDepth : 1;
+
+  // Convert depth-from-root to pixel x position.
+  // Root (depth=0) is on the RIGHT, leaves (depth=maxDepth) on the LEFT.
+  function nodeX(depthFromRoot: number): number {
+    return leftMargin + treeAreaWidth - depthFromRoot * treeXScale;
+  }
+
+  function nodeY(yIndex: number): number {
+    return topMargin + yIndex * rowHeight + rowHeight / 2;
+  }
 
   const handleExportSvg = () => {
     if (!svgRef.current) return;
@@ -230,9 +235,57 @@ export function TreeViewer({ newick }: TreeViewerProps) {
     URL.revokeObjectURL(url);
   };
 
+  // Build SVG paths for the tree branches using proper cladogram elbows:
+  // For each internal node:
+  //   1. Vertical bar at parent's x, spanning from min to max child y
+  //   2. Horizontal line from parent's x to each child's x at the child's y
+  const paths: { d: string }[] = [];
+  for (const ln of layoutNodes) {
+    if (!ln.isLeaf && ln.children) {
+      const parentX = nodeX(ln.depthFromRoot);
+
+      // Collect child positions
+      const childPositions = ln.children.map((c) => ({
+        x: nodeX(c.layoutNode.depthFromRoot),
+        y: nodeY(c.layoutNode.y),
+      }));
+
+      const childYs = childPositions.map((c) => c.y);
+      const minChildY = Math.min(...childYs);
+      const maxChildY = Math.max(...childYs);
+
+      // Vertical bar at parent x spanning children's y range
+      paths.push({
+        d: `M${parentX},${minChildY} V${maxChildY}`,
+      });
+
+      // Horizontal branch from parent x to each child's x at child's y
+      for (const cp of childPositions) {
+        paths.push({
+          d: `M${parentX},${cp.y} H${cp.x}`,
+        });
+      }
+    }
+  }
+
   return (
     <div ref={containerRef}>
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-2 mb-3 items-center">
+        <Button
+          variant={uniformBranches ? "ghost" : "secondary"}
+          size="sm"
+          onClick={() => setUniformBranches(false)}
+        >
+          Actual Lengths
+        </Button>
+        <Button
+          variant={uniformBranches ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => setUniformBranches(true)}
+        >
+          Uniform Lengths
+        </Button>
+        <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={handleExportNewick}>
           Download Newick
         </Button>
@@ -240,17 +293,111 @@ export function TreeViewer({ newick }: TreeViewerProps) {
           Download SVG
         </Button>
       </div>
-      <div className="border border-gray-200 rounded-lg overflow-auto bg-white">
-        <svg
-          ref={svgRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          className="block"
-        />
+      <div className="border border-gray-200 rounded-lg overflow-x-auto bg-white">
+        <div style={{ position: "relative", width: containerWidth, height: totalHeight }}>
+          {/* SVG layer for tree branches */}
+          <svg
+            ref={svgRef}
+            width={containerWidth}
+            height={totalHeight}
+            style={{ position: "absolute", top: 0, left: 0 }}
+          >
+            {paths.map((p, i) => (
+              <path
+                key={i}
+                d={p.d}
+                fill="none"
+                stroke="#999"
+                strokeWidth={1.5}
+              />
+            ))}
+
+            {/* Node dots */}
+            {layoutNodes.map((ln, i) => (
+              <circle
+                key={i}
+                cx={nodeX(ln.depthFromRoot)}
+                cy={nodeY(ln.y)}
+                r={ln.isLeaf ? 3 : 4}
+                fill={ln.isLeaf ? "#0074c6" : "#999"}
+                stroke="#fff"
+                strokeWidth={1}
+              />
+            ))}
+          </svg>
+
+          {/* HTML layer for leaf labels and logos */}
+          {layoutNodes
+            .filter((ln) => ln.isLeaf)
+            .map((ln) => {
+              const yPos = nodeY(ln.y);
+              const alignEntry = alignmentMap.get(ln.node.name);
+
+              return (
+                <div
+                  key={ln.node.name}
+                  style={{
+                    position: "absolute",
+                    top: yPos - leafLogoHeight / 2,
+                    left: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    height: leafLogoHeight,
+                  }}
+                >
+                  <div
+                    style={{ width: leafNameWidth, textAlign: "right", paddingRight: 4 }}
+                    className="text-xs font-medium text-gray-700 truncate"
+                    title={ln.node.name}
+                  >
+                    {ln.node.name}
+                  </div>
+                  {alignEntry && (
+                    <SequenceLogo
+                      matrix={alignEntry.alignedMatrix}
+                      height={leafLogoHeight}
+                      width={leafLogoWidth}
+                      showAxes={false}
+                      reverseComplement={false}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+          {/* Internal node profile logos */}
+          {layoutNodes
+            .filter((ln) => !ln.isLeaf)
+            .map((ln) => {
+              const profile = profileMap.get(ln.node.name);
+              if (!profile) return null;
+
+              const xPos = nodeX(ln.depthFromRoot);
+              const yPos = nodeY(ln.y);
+
+              return (
+                <div
+                  key={`profile-${ln.node.name}`}
+                  style={{
+                    position: "absolute",
+                    top: yPos - internalLogoHeight / 2,
+                    left: xPos + 8,
+                    height: internalLogoHeight,
+                  }}
+                >
+                  <SequenceLogo
+                    matrix={profile}
+                    height={internalLogoHeight}
+                    width={internalLogoWidth}
+                    showAxes={false}
+                    reverseComplement={false}
+                  />
+                </div>
+              );
+            })}
+        </div>
       </div>
-      <p className="text-xs text-gray-400 mt-2">
-        Scroll to zoom, drag to pan. Click internal nodes to collapse/expand.
-      </p>
     </div>
   );
 }

@@ -31,12 +31,6 @@ function reverseComplementMatrix(matrix: number[][]): number[][] {
   return [...matrix].reverse().map(([a, c, g, t]) => [t, g, c, a]);
 }
 
-/**
- * Rasterize a single letter: draw it at a large font size on an offscreen
- * canvas, find exact pixel bounds, return the canvas and bounds.
- * This approach (from MEME-suite) gives pixel-perfect letter placement
- * with no clipping or baseline issues.
- */
 function rasterizeLetter(
   letter: string,
   color: string,
@@ -54,7 +48,6 @@ function rasterizeLetter(
   ctx.textAlign = "center";
   ctx.fillText(letter, cx, baseline);
 
-  // Scan pixel data to find exact vertical bounds
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   let topLine = -1;
   let bottomLine = -1;
@@ -70,7 +63,6 @@ function rasterizeLetter(
   return { canvas, top: topLine, height: h };
 }
 
-// Cache rasterized letters to avoid re-creating every render
 const letterCache = new Map<
   string,
   { canvas: HTMLCanvasElement; top: number; height: number }
@@ -85,8 +77,10 @@ function getCachedLetter(letter: string, color: string, fontSize: number) {
 }
 
 /**
- * Canvas-based sequence logo renderer using MEME-suite style rendering.
- * Uses rasterized letter approach for pixel-perfect placement.
+ * Canvas-based sequence logo renderer.
+ *
+ * Layout is always computed as if axes are shown so toggling axes only
+ * hides/shows the axis elements without changing motif rendering.
  */
 export function SequenceLogo({
   matrix,
@@ -101,33 +95,30 @@ export function SequenceLogo({
     ? reverseComplementMatrix(matrix)
     : matrix;
 
-  // When RC is active and highlightRange is set, flip the range
   const effectiveHighlight = highlightRange && reverseComplement
     ? [displayMatrix.length - 1 - highlightRange[1], displayMatrix.length - 1 - highlightRange[0]] as [number, number]
     : highlightRange;
 
   const maxBits = 2;
-  const defaultStackW = 20;
-  const stackHeight = showAxes ? Math.max(height - 30, 50) : height - 4;
 
-  // Y-axis layout
-  const yLabelH = showAxes ? 12 : 0;
-  const yLabelSpacer = showAxes ? 3 : 0;
-  const yNumW = showAxes ? 14 : 0;
-  const yTicW = showAxes ? 5 : 0;
+  const defaultStackW = 28;
+
+  // Always compute layout as if axes are visible so toggling axes
+  // doesn't change the motif rendering at all.
+  const stackHeight = Math.max(height - 30, 50);
+  const yLabelH = 12;
+  const yLabelSpacer = 3;
+  const yNumW = 14;
+  const yTicW = 5;
   const yAxisTotal = yLabelH + yLabelSpacer + yNumW + yTicW;
-
-  // X-axis layout
-  const xNumH = showAxes ? 14 : 0;
-  const xNumAbove = showAxes ? 2 : 0;
-
-  const topPad = showAxes ? 8 : 2;
+  const xNumH = 14;
+  const xNumAbove = 2;
+  const topPad = 8;
 
   const canvasWidth =
     width || yAxisTotal + displayMatrix.length * defaultStackW + 8;
   const canvasHeight = topPad + stackHeight + xNumAbove + xNumH + 2;
 
-  // Effective column width
   const effectiveStackW = width
     ? (width - yAxisTotal - 8) / displayMatrix.length
     : defaultStackW;
@@ -138,7 +129,6 @@ export function SequenceLogo({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // High-DPI
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvasWidth * dpr;
     canvas.height = canvasHeight * dpr;
@@ -147,12 +137,11 @@ export function SequenceLogo({
     canvas.style.height = `${canvasHeight}px`;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // ---- Draw Y-axis ----
+    // ---- Draw Y-axis (only if showAxes) ----
     if (showAxes) {
       ctx.save();
       ctx.translate(0, topPad);
 
-      // "bits" label (rotated)
       ctx.save();
       ctx.font = `bold ${yLabelH}px Helvetica, Arial, sans-serif`;
       ctx.fillStyle = "#333";
@@ -162,7 +151,6 @@ export function SequenceLogo({
       ctx.fillText("bits", 0, 0);
       ctx.restore();
 
-      // Tick marks and numbers
       ctx.save();
       ctx.translate(yLabelH + yLabelSpacer + yNumW, 0);
       ctx.font = "bold 11px Helvetica, Arial, sans-serif";
@@ -176,11 +164,9 @@ export function SequenceLogo({
         ctx.fillRect(0, y - 0.75, yTicW, 1.5);
       }
 
-      // Vertical axis line
       ctx.fillRect(yTicW - 1.5, 0, 1.5, stackHeight);
       ctx.restore();
 
-      // Horizontal baseline
       ctx.fillStyle = "#333";
       ctx.fillRect(
         yAxisTotal - 1.5,
@@ -193,7 +179,6 @@ export function SequenceLogo({
     }
 
     // ---- Detect internal vs edge gaps ----
-    // Find first and last non-zero columns to distinguish internal gaps from edge gaps
     let firstNonZero = -1;
     let lastNonZero = -1;
     for (let pos = 0; pos < displayMatrix.length; pos++) {
@@ -206,20 +191,17 @@ export function SequenceLogo({
 
     // ---- Draw letter stacks ----
     const rasterFontSize = 60;
-    let positionLabel = 0; // Track position label separately (only count non-edge-gap columns)
+    let positionLabel = 0;
     for (let pos = 0; pos < displayMatrix.length; pos++) {
       const [a, c, g, t] = displayMatrix[pos];
       const total = a + c + g + t;
       const xBase = yAxisTotal + pos * effectiveStackW;
 
-      // Determine if this position is outside the highlight range (faded)
       const isFaded = effectiveHighlight != null &&
         (pos < effectiveHighlight[0] || pos > effectiveHighlight[1]);
 
       if (total === 0) {
-        // Zero column: internal gap → grey block, edge gap → skip
         if (firstNonZero !== -1 && pos > firstNonZero && pos < lastNonZero) {
-          // Internal gap — draw grey block
           ctx.globalAlpha = isFaded ? 0.25 : 1.0;
           ctx.fillStyle = "#E5E7EB";
           ctx.fillRect(
@@ -230,27 +212,23 @@ export function SequenceLogo({
           );
           ctx.globalAlpha = 1.0;
         }
-        // Edge gaps: skip entirely (empty space)
         continue;
       }
 
       positionLabel++;
 
-      // Set alpha for faded positions
       if (isFaded) {
         ctx.globalAlpha = 0.25;
       }
 
       const freqs = [a / total, c / total, g / total, t / total];
 
-      // Information content
       let entropy = 0;
       for (const f of freqs) {
         if (f > 0) entropy -= f * Math.log2(f);
       }
       const ic = maxBits - entropy;
 
-      // Sorted ascending (smallest at bottom)
       const letterHeights = LETTERS.map((letter, idx) => ({
         letter,
         h: freqs[idx] * ic,
@@ -284,12 +262,11 @@ export function SequenceLogo({
         yBottom -= drawH;
       }
 
-      // Reset alpha
       if (isFaded) {
         ctx.globalAlpha = 1.0;
       }
 
-      // Position numbers on x-axis (rotated like MEME)
+      // Position numbers on x-axis (only if showAxes)
       if (showAxes) {
         ctx.save();
         ctx.translate(

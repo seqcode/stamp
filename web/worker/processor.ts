@@ -94,11 +94,21 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       inputMotifMap.set(m.name, m.matrix);
     }
 
-    // Enrich match results with query motif matrices from input
+    // Enrich match results with query motif matrices and database metadata
     const matchPairs = parsed.matchDetails || [];
     for (const matchResult of matchPairs) {
       for (const entry of matchResult.matches) {
         entry.queryMotifMatrix = inputMotifMap.get(matchResult.queryName) || null;
+
+        // Parse "MA0139.1::CTCF" format to extract database metadata
+        if (entry.name && entry.name.includes("::")) {
+          const [matrixId, ...rest] = entry.name.split("::");
+          const displayName = rest.join("::");
+          entry.dbId = matrixId;
+          entry.dbSource = "JASPAR";
+          entry.dbUrl = `https://jaspar.elixir.no/matrix/${matrixId}`;
+          entry.name = displayName || matrixId;
+        }
       }
     }
 
@@ -173,7 +183,10 @@ async function generateReferenceDb(
 
   const lines: string[] = [];
   for (const motif of motifs) {
-    lines.push(`DE\t${motif.name}\t`);
+    // Include matrixId in the DE line so STAMP outputs it as the match name.
+    // Format: "MA0139.1::CTCF" — frontend parses this to extract DB info.
+    const deName = motif.matrixId ? `${motif.matrixId}::${motif.name}` : motif.name;
+    lines.push(`DE\t${deName}\t`);
     const length = motif.pfm.A.length;
     for (let pos = 0; pos < length; pos++) {
       lines.push(

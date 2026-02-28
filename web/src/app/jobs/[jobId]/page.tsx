@@ -7,10 +7,12 @@ import { JobProgress } from "@/components/job/JobProgress";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { SequenceLogo } from "@/components/motif/SequenceLogo";
-import { RCToggle } from "@/components/motif/RCToggle";
+import { LogoToolbar } from "@/components/motif/LogoToolbar";
 import { TreeViewer } from "@/components/results/TreeViewer";
 import { MatchTable } from "@/components/results/MatchTable";
 import { MultipleAlignmentViewer } from "@/components/results/MultipleAlignmentViewer";
+import { exportLogosAsPng, exportLogosAsSvg } from "@/lib/export/logoRenderer";
+import type { LogoSpec } from "@/lib/export/logoRenderer";
 import type { JobResults, StampParams } from "@/types";
 
 interface JobData {
@@ -65,9 +67,6 @@ function CollapsibleSection({
   );
 }
 
-/**
- * Human-readable labels for STAMP parameter values.
- */
 const METRIC_LABELS: Record<string, string> = {
   PCC: "Pearson Correlation (PCC)",
   ALLR: "Average Log-Likelihood Ratio (ALLR)",
@@ -101,8 +100,8 @@ export default function JobPage() {
   const { status, error: sseError } = useJobStatus(jobId);
   const [job, setJob] = useState<JobData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fbpRc, setFbpRc] = useState(false);
   const [inputRc, setInputRc] = useState(false);
+  const [inputShowAxes, setInputShowAxes] = useState(true);
 
   const fetchJob = useCallback(async () => {
     try {
@@ -118,17 +117,39 @@ export default function JobPage() {
     }
   }, [jobId]);
 
-  // Initial fetch
   useEffect(() => {
     fetchJob();
   }, [fetchJob]);
 
-  // Re-fetch when status changes to complete
   useEffect(() => {
     if (status === "complete" || status === "failed") {
       fetchJob();
     }
   }, [status, fetchJob]);
+
+  const handleInputPng = useCallback(() => {
+    if (!job?.results?.inputMotifs) return;
+    const specs: LogoSpec[] = job.results.inputMotifs.map((m) => ({
+      label: m.name,
+      matrix: m.matrix,
+      reverseComplement: inputRc,
+      showAxes: inputShowAxes,
+      height: 80,
+    }));
+    exportLogosAsPng(specs, "input-motifs.png");
+  }, [job, inputRc, inputShowAxes]);
+
+  const handleInputSvg = useCallback(() => {
+    if (!job?.results?.inputMotifs) return;
+    const specs: LogoSpec[] = job.results.inputMotifs.map((m) => ({
+      label: m.name,
+      matrix: m.matrix,
+      reverseComplement: inputRc,
+      showAxes: inputShowAxes,
+      height: 80,
+    }));
+    exportLogosAsSvg(specs, "input-motifs.svg");
+  }, [job, inputRc, inputShowAxes]);
 
   if (loading) {
     return (
@@ -163,16 +184,19 @@ export default function JobPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Job {jobId.slice(0, 8)}...
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {job.input.motifCount} motif{job.input.motifCount !== 1 ? "s" : ""}
-            {job.input.fileName ? ` from ${job.input.fileName}` : ""}
-            {" \u00B7 "}
-            Submitted {new Date(job.createdAt).toLocaleString()}
-          </p>
+        <div className="flex items-center gap-4">
+          <img src="/stamp-logo.jpg" alt="STAMP" style={{ width: 150 }} />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Job {jobId.slice(0, 8)}...
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {job.input.motifCount} motif{job.input.motifCount !== 1 ? "s" : ""}
+              {job.input.fileName ? ` from ${job.input.fileName}` : ""}
+              {" \u00B7 "}
+              Submitted {new Date(job.createdAt).toLocaleString()}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {isComplete && (
@@ -186,14 +210,13 @@ export default function JobPage() {
         </div>
       </div>
 
-      {/* Progress — hidden once results are ready */}
+      {/* Progress */}
       {!isComplete && (
         <Card>
           <JobProgress status={status} error={sseError || job.error || undefined} />
         </Card>
       )}
 
-      {/* Error display when complete but had errors */}
       {isComplete && (sseError || job.error) && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {sseError || job.error}
@@ -207,10 +230,16 @@ export default function JobPage() {
           <CollapsibleSection
             title="Input Parameters"
             titleRight={
-              <RCToggle active={inputRc} onToggle={() => setInputRc((v) => !v)} />
+              <LogoToolbar
+                rc={inputRc}
+                onToggleRc={() => setInputRc((v) => !v)}
+                showAxes={inputShowAxes}
+                onToggleAxes={() => setInputShowAxes((v) => !v)}
+                onDownloadPng={handleInputPng}
+                onDownloadSvg={handleInputSvg}
+              />
             }
           >
-            {/* Alignment settings summary */}
             {p && (
               <div className="mb-4 grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
                 <div>
@@ -264,7 +293,6 @@ export default function JobPage() {
               </div>
             )}
 
-            {/* Input motif logos */}
             {results.inputMotifs && results.inputMotifs.length > 0 && (
               <div className="space-y-3">
                 {results.inputMotifs.map((motif) => (
@@ -275,6 +303,7 @@ export default function JobPage() {
                     <SequenceLogo
                       matrix={motif.matrix}
                       height={80}
+                      showAxes={inputShowAxes}
                       reverseComplement={inputRc}
                     />
                   </div>
@@ -283,42 +312,31 @@ export default function JobPage() {
             )}
           </CollapsibleSection>
 
-          {/* 2. Multiple Alignment */}
+          {/* 2. Multiple Alignment + FBP */}
           {results.multipleAlignment && results.multipleAlignment.length > 0 && (
             <CollapsibleSection title="Multiple Alignment">
-              <MultipleAlignmentViewer alignment={results.multipleAlignment} />
+              <MultipleAlignmentViewer
+                alignment={results.multipleAlignment}
+                fbp={results.fbpProfile}
+              />
             </CollapsibleSection>
           )}
 
-          {/* 3. FBP Profile */}
-          {results.fbpProfile && (
-            <CollapsibleSection
-              title="Familial Binding Profile (FBP)"
-              titleRight={
-                <RCToggle active={fbpRc} onToggle={() => setFbpRc((v) => !v)} />
-              }
-            >
-              <div className="flex justify-center">
-                <SequenceLogo
-                  matrix={results.fbpProfile}
-                  height={120}
-                  reverseComplement={fbpRc}
-                />
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* 4. Similarity Matches */}
+          {/* 3. Similarity Matches */}
           {results.matchPairs && results.matchPairs.length > 0 && (
             <CollapsibleSection title="Similarity Matches">
               <MatchTable matchPairs={results.matchPairs} />
             </CollapsibleSection>
           )}
 
-          {/* 5. Phylogenetic Tree */}
+          {/* 4. Phylogenetic Tree */}
           {results.treeNewick && (
             <CollapsibleSection title="Phylogenetic Tree">
-              <TreeViewer newick={results.treeNewick} />
+              <TreeViewer
+                newick={results.treeNewick}
+                alignment={results.multipleAlignment || undefined}
+                internalProfiles={results.internalProfiles || undefined}
+              />
             </CollapsibleSection>
           )}
         </>

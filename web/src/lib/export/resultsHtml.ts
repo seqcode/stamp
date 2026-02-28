@@ -22,7 +22,7 @@ export function generateResultsHtml(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STAMP Results - ${jobId}</title>
+<title>STAMP 2.0 Results - ${jobId}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; padding: 2rem; max-width: 1200px; margin: 0 auto; }
@@ -43,9 +43,15 @@ export function generateResultsHtml(
   .match-body { border-top: 1px solid #f3f4f6; }
   .match-entry { padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6; }
   .match-entry:last-child { border-bottom: none; }
-  .match-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-  .match-entry-header .name { font-weight: 500; font-size: 0.875rem; }
-  .match-entry-header .evalue { font-family: monospace; font-size: 0.75rem; color: #6b7280; }
+  .match-info { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+  .match-info .name { font-weight: 500; font-size: 0.875rem; }
+  .match-info .name a { color: #2563eb; text-decoration: none; }
+  .match-info .name a:hover { text-decoration: underline; }
+  .match-info .badge { font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }
+  .match-info .badge-id { background: #f3f4f6; color: #6b7280; font-family: monospace; }
+  .match-info .badge-db { background: #3b82f6; color: #fff; }
+  .align-info { font-size: 0.75rem; color: #6b7280; display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .align-info .sep { color: #d1d5db; }
   .logo-pair { margin-top: 0.25rem; }
   .logo-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; }
   .logo-label { width: 4rem; text-align: right; font-size: 0.75rem; color: #6b7280; flex-shrink: 0; }
@@ -53,20 +59,20 @@ export function generateResultsHtml(
   .strand { font-size: 0.75rem; color: #9ca3af; margin-left: 0.25rem; }
   .rc-btn { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; background: #f3f4f6; color: #6b7280; }
   .rc-btn.active { background: #dbeafe; color: #1d4ed8; }
+  .fbp-separator { border-top: 1px solid #e5e7eb; margin: 1rem 0 0.5rem; padding-top: 0.5rem; }
+  .fbp-label { font-size: 0.75rem; font-weight: 500; color: #6b7280; margin-bottom: 0.25rem; }
   .hidden { display: none; }
 </style>
 </head>
 <body>
-<h1>STAMP Results</h1>
+<h1>STAMP 2.0 Results</h1>
 <div class="subtitle">Job ${jobId} &middot; Generated ${new Date(createdAt).toLocaleString()}</div>
 
 <div id="app"></div>
 
 <script>
-// Embedded data
 var DATA = ${data};
 
-// --- Sequence logo rendering ---
 var COLORS = { A: '#CC0000', C: '#0000CC', G: '#FFB300', T: '#008000' };
 var LETTERS = ['A', 'C', 'G', 'T'];
 var letterCache = {};
@@ -100,23 +106,21 @@ function rasterizeLetter(letter, color, fontSize) {
   return result;
 }
 
-// drawLogo: renders a sequence logo, with optional highlightRange [start, end] for fading
 function drawLogo(canvas, matrix, rc, highlightRange) {
   if (!matrix || matrix.length === 0) return;
   var displayMatrix = rc ? matrix.slice().reverse().map(function(r) { return [r[3], r[2], r[1], r[0]]; }) : matrix;
-  // Flip highlight range when RC
   var hl = highlightRange;
   if (hl && rc) {
     hl = [displayMatrix.length - 1 - highlightRange[1], displayMatrix.length - 1 - highlightRange[0]];
   }
-  var stackW = 20;
+  var stackW = 28;
   var showAxes = true;
   var maxBits = 2;
-  var yAxisTotal = showAxes ? 34 : 0;
-  var topPad = showAxes ? 8 : 2;
+  var yAxisTotal = 34;
+  var topPad = 8;
   var stackHeight = 60;
-  var xNumH = showAxes ? 14 : 0;
-  var xNumAbove = showAxes ? 2 : 0;
+  var xNumH = 14;
+  var xNumAbove = 2;
   var cw = yAxisTotal + displayMatrix.length * stackW + 8;
   var ch = topPad + stackHeight + xNumAbove + xNumH + 2;
   var dpr = window.devicePixelRatio || 1;
@@ -128,7 +132,6 @@ function drawLogo(canvas, matrix, rc, highlightRange) {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, cw, ch);
 
-  // Y-axis
   if (showAxes) {
     ctx.save(); ctx.translate(0, topPad);
     ctx.save(); ctx.font = 'bold 12px Helvetica, Arial, sans-serif'; ctx.fillStyle = '#333';
@@ -147,7 +150,6 @@ function drawLogo(canvas, matrix, rc, highlightRange) {
     ctx.restore();
   }
 
-  // Gap detection
   var firstNZ = -1, lastNZ = -1;
   for (var p = 0; p < displayMatrix.length; p++) {
     var s = displayMatrix[p][0] + displayMatrix[p][1] + displayMatrix[p][2] + displayMatrix[p][3];
@@ -211,7 +213,6 @@ function createLogoCanvas(matrix, rc) {
   return c;
 }
 
-// --- Alignment helpers ---
 function reverseComplementMatrix(matrix) {
   return matrix.slice().reverse().map(function(r) { return [r[3], r[2], r[1], r[0]]; });
 }
@@ -236,7 +237,6 @@ function buildAlignedPair(match) {
   var rawQ = match.queryMotifMatrix ? (match.queryStrand === '-' ? reverseComplementMatrix(match.queryMotifMatrix) : match.queryMotifMatrix) : null;
   var rawM = match.matchMotifMatrix ? (match.matchStrand === '-' ? reverseComplementMatrix(match.matchMotifMatrix) : match.matchMotifMatrix) : null;
   if (!rawQ || !rawM || !match.queryLength || !match.matchLength) {
-    // Legacy fallback
     function buildSimple(cons, pfm) {
       var r = [], idx = 0;
       for (var i = 0; i < cons.length; i++) {
@@ -259,12 +259,10 @@ function buildAlignedPair(match) {
   return { query: q, match: m };
 }
 
-// --- Build page ---
 var app = document.getElementById('app');
 var res = DATA.results;
 var p = DATA.params;
 
-// Helper: collapsible card
 function makeCard(title, content, extraTitle) {
   var card = document.createElement('div');
   card.className = 'card';
@@ -360,7 +358,7 @@ var TREE_LABELS = {UPGMA:'UPGMA',NJ:'Neighbor Joining (NJ)'};
   }
 })();
 
-// 2. Multiple Alignment
+// 2. Multiple Alignment + FBP
 if (res.multipleAlignment && res.multipleAlignment.length > 0) {
   (function() {
     var frag = document.createElement('div');
@@ -379,6 +377,30 @@ if (res.multipleAlignment && res.multipleAlignment.length > 0) {
       row.appendChild(c);
       frag.appendChild(row);
     });
+
+    // FBP merged into Multiple Alignment
+    if (res.fbpProfile) {
+      var sep = document.createElement('div');
+      sep.className = 'fbp-separator';
+      var label = document.createElement('div');
+      label.className = 'fbp-label';
+      label.textContent = 'Familial Binding Profile (FBP)';
+      sep.appendChild(label);
+      var fbpRow = document.createElement('div');
+      fbpRow.className = 'motif-row';
+      var fbpName = document.createElement('div');
+      fbpName.className = 'motif-name';
+      fbpName.textContent = 'FBP';
+      var fbpCanvas = document.createElement('canvas');
+      fbpCanvas.style.display = 'block';
+      canvases.push({ canvas: fbpCanvas, matrix: res.fbpProfile });
+      setTimeout(function() { drawLogo(fbpCanvas, res.fbpProfile, false); }, 0);
+      fbpRow.appendChild(fbpName);
+      fbpRow.appendChild(fbpCanvas);
+      sep.appendChild(fbpRow);
+      frag.appendChild(sep);
+    }
+
     var rcBtn = makeRcBtn(function(active) {
       canvases.forEach(function(item) { drawLogo(item.canvas, item.matrix, active); });
     });
@@ -386,22 +408,7 @@ if (res.multipleAlignment && res.multipleAlignment.length > 0) {
   })();
 }
 
-// 3. FBP Profile
-if (res.fbpProfile) {
-  (function() {
-    var frag = document.createElement('div');
-    frag.style.display = 'flex';
-    frag.style.justifyContent = 'center';
-    var c = document.createElement('canvas');
-    c.style.display = 'block';
-    setTimeout(function() { drawLogo(c, res.fbpProfile, false); }, 0);
-    frag.appendChild(c);
-    var rcBtn = makeRcBtn(function(active) { drawLogo(c, res.fbpProfile, active); });
-    app.appendChild(makeCard('Familial Binding Profile (FBP)', frag, rcBtn));
-  })();
-}
-
-// 4. Similarity Matches
+// 3. Similarity Matches
 if (res.matchPairs && res.matchPairs.length > 0) {
   (function() {
     var frag = document.createElement('div');
@@ -431,20 +438,47 @@ if (res.matchPairs && res.matchPairs.length > 0) {
           entryCanvases.forEach(function(item) { drawLogo(item.canvas, item.matrix, active, item.hl); });
         });
 
-        var hdr = document.createElement('div');
-        hdr.className = 'match-entry-header';
-        hdr.innerHTML = '<span class="name">' + (idx + 1) + '. ' + match.name + '</span>';
-        var hdrRight = document.createElement('div');
-        hdrRight.style.display = 'flex';
-        hdrRight.style.alignItems = 'center';
-        hdrRight.style.gap = '0.75rem';
-        var ev = document.createElement('span');
-        ev.className = 'evalue';
-        ev.textContent = 'E-value: ' + match.evalue.toExponential(2);
-        hdrRight.appendChild(ev);
-        hdrRight.appendChild(rcBtn);
-        hdr.appendChild(hdrRight);
-        entry.appendChild(hdr);
+        // Match info line with DB metadata
+        var info = document.createElement('div');
+        info.className = 'match-info';
+        var nameHtml = '<span class="name">' + (idx + 1) + '. ';
+        if (match.dbUrl) {
+          nameHtml += '<a href="' + match.dbUrl + '" target="_blank">' + match.name + '</a>';
+        } else {
+          nameHtml += match.name;
+        }
+        nameHtml += '</span>';
+        info.innerHTML = nameHtml;
+        if (match.dbId) {
+          var idBadge = document.createElement('span');
+          idBadge.className = 'badge badge-id';
+          idBadge.textContent = match.dbId;
+          info.appendChild(idBadge);
+        }
+        if (match.dbSource) {
+          var dbBadge = document.createElement('span');
+          dbBadge.className = 'badge badge-db';
+          dbBadge.textContent = match.dbSource + (match.dbCollection ? ' ' + match.dbCollection : '');
+          info.appendChild(dbBadge);
+        }
+        entry.appendChild(info);
+
+        // Alignment info
+        var alignInfo = document.createElement('div');
+        alignInfo.className = 'align-info';
+        alignInfo.innerHTML = '<span style="font-family:monospace">E-value: ' + match.evalue.toExponential(2) + '</span>';
+        if (match.queryLength > 0) {
+          alignInfo.innerHTML += '<span class="sep">|</span>'
+            + '<span>Query(' + match.queryStrand + '): ' + match.queryAlignStart + '\\u2013' + match.queryAlignEnd + ' / ' + match.queryLength + ' pos</span>'
+            + '<span>Match(' + match.matchStrand + '): ' + match.matchAlignStart + '\\u2013' + match.matchAlignEnd + ' / ' + match.matchLength + ' pos</span>';
+        }
+        entry.appendChild(alignInfo);
+
+        // RC button
+        var btnWrap = document.createElement('div');
+        btnWrap.style.marginBottom = '0.5rem';
+        btnWrap.appendChild(rcBtn);
+        entry.appendChild(btnWrap);
 
         var logos = document.createElement('div');
         logos.className = 'logo-pair';
@@ -485,7 +519,7 @@ if (res.matchPairs && res.matchPairs.length > 0) {
   })();
 }
 
-// 5. Phylogenetic Tree
+// 4. Phylogenetic Tree
 if (res.treeNewick) {
   var pre = document.createElement('pre');
   pre.className = 'tree-pre';
