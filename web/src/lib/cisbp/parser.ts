@@ -67,6 +67,9 @@ export function parseCisbpPwm(content: string): CisbpParsedMotif["pfm"] | null {
 /**
  * Parse CIS-BP TF_Information.txt to extract motif metadata.
  * Returns a map from Motif_ID to motif info.
+ *
+ * Only rows with TF_Status === "D" (directly measured) are included,
+ * so species labels accurately reflect direct binding evidence.
  */
 export function parseTfInformation(
   content: string
@@ -84,6 +87,7 @@ export function parseTfInformation(
   const familyCol = col("Family_ID");
   const motifIdCol = col("Motif_ID");
   const msourceCol = col("MSource_Identifier");
+  const statusCol = col("TF_Status");
 
   if (tfIdCol === -1 || motifIdCol === -1) return new Map();
 
@@ -92,6 +96,12 @@ export function parseTfInformation(
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(/\t/);
     if (parts.length <= motifIdCol) continue;
+
+    // Only include directly-measured motif–species associations
+    if (statusCol >= 0) {
+      const status = parts[statusCol]?.trim();
+      if (status !== "D") continue;
+    }
 
     const motifId = parts[motifIdCol]?.trim();
     if (!motifId || motifId === "." || motifId === "") continue;

@@ -131,6 +131,9 @@ async function parseTfInfoFromZipStream(
 /**
  * Parse a TF_Information file from a Node.js readable stream, line by line,
  * without ever creating a single large string in memory.
+ *
+ * Only rows with TF_Status === "D" (directly measured) are included,
+ * so species labels accurately reflect direct binding evidence.
  */
 async function parseTfInfoLines(
   stream: NodeJS.ReadableStream
@@ -144,7 +147,8 @@ async function parseTfInfoLines(
     speciesCol = -1,
     familyCol = -1,
     motifIdCol = -1,
-    msourceCol = -1;
+    msourceCol = -1,
+    statusCol = -1;
 
   for await (const line of rl) {
     if (firstLine) {
@@ -155,6 +159,7 @@ async function parseTfInfoLines(
       familyCol = header.indexOf("Family_ID");
       motifIdCol = header.indexOf("Motif_ID");
       msourceCol = header.indexOf("MSource_Identifier");
+      statusCol = header.indexOf("TF_Status");
       firstLine = false;
       continue;
     }
@@ -162,6 +167,12 @@ async function parseTfInfoLines(
     if (motifIdCol === -1) continue;
     const parts = line.split("\t");
     if (parts.length <= motifIdCol) continue;
+
+    // Only include directly-measured motif–species associations
+    if (statusCol >= 0) {
+      const status = parts[statusCol]?.trim();
+      if (status !== "D") continue;
+    }
 
     const motifId = parts[motifIdCol]?.trim();
     if (!motifId || motifId === "." || motifId === "") continue;
