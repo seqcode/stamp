@@ -16,10 +16,15 @@ export const stampParamsSchema = z.object({
   forwardOnly: z.boolean().default(false),
 });
 
+export const databaseSelectionSchema = z.object({
+  slug: z.string(),
+  groups: z.array(z.string()).default([]),
+});
+
 export const matchingConfigSchema = z.object({
   enabled: z.boolean().default(false),
-  taxonGroups: z.array(z.string()).default([]),
-  topMatches: z.number().int().min(1).max(20).default(5),
+  databases: z.array(databaseSelectionSchema).default([]),
+  topMatches: z.number().int().min(1).max(50).default(5),
   customDbFileKey: z.string().nullable().default(null),
 });
 

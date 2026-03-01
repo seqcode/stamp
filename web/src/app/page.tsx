@@ -16,7 +16,7 @@ export default function HomePage() {
   const [params, setParams] = useState<StampParams>({ ...DEFAULT_PARAMS });
   const [matching, setMatching] = useState<MatchingConfig>({
     enabled: true,
-    taxonGroups: ["vertebrates"],
+    databases: [{ slug: "jaspar-core", groups: ["vertebrates"] }],
     topMatches: 5,
     customDbFileKey: null,
   });

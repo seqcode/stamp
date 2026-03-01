@@ -3,11 +3,13 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IMotif extends Document {
   databaseRef: Types.ObjectId;
   matrixId: string;
-  baseId: string;
-  version: number;
+  baseId: string | null;
+  version: number | null;
   name: string;
-  jasparCollection: string;
-  taxGroup: string;
+  dbSource: string;
+  group: string;
+  jasparCollection: string | null;
+  taxGroup: string | null;
   tfClass: string | null;
   family: string | null;
   species: { taxId: number; name: string }[];
@@ -20,11 +22,13 @@ const MotifSchema = new Schema<IMotif>(
   {
     databaseRef: { type: Schema.Types.ObjectId, ref: "ReferenceDatabase", required: true },
     matrixId: { type: String, required: true, index: true },
-    baseId: { type: String, required: true },
-    version: { type: Number, required: true },
+    baseId: { type: String, default: null },
+    version: { type: Number, default: null },
     name: { type: String, required: true },
-    jasparCollection: { type: String, required: true },
-    taxGroup: { type: String, required: true },
+    dbSource: { type: String, required: true },
+    group: { type: String, required: true },
+    jasparCollection: { type: String, default: null },
+    taxGroup: { type: String, default: null },
     tfClass: { type: String, default: null },
     family: { type: String, default: null },
     species: [
@@ -46,7 +50,7 @@ const MotifSchema = new Schema<IMotif>(
   }
 );
 
-MotifSchema.index({ databaseRef: 1, taxGroup: 1 });
+MotifSchema.index({ databaseRef: 1, group: 1 });
 MotifSchema.index({ name: "text" });
 
 export const Motif =

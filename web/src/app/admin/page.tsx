@@ -18,6 +18,7 @@ interface DatabaseInfo {
   name: string;
   slug: string;
   source: string;
+  version: string | null;
   motifCount: number;
   taxonGroups: string[];
   lastSyncedAt: string | null;
@@ -31,6 +32,10 @@ export default function AdminPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [selectedTaxons, setSelectedTaxons] = useState<string[]>([]);
   const [cleanupDays, setCleanupDays] = useState(7);
+
+  // CIS-BP state
+  const [cisbpSyncing, setCisbpSyncing] = useState(false);
+  const [cisbpResult, setCisbpResult] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const [jobsRes, dbsRes] = await Promise.all([
@@ -78,6 +83,30 @@ export default function AdminPage() {
       setSyncResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleCisbpSync = async () => {
+    setCisbpSyncing(true);
+    setCisbpResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-cisbp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCisbpResult(
+          `Sync complete: ${data.result.totalStored} motifs stored from ${data.result.species.length} species, ${data.result.errors.length} errors`
+        );
+        fetchData();
+      } else {
+        setCisbpResult(`Sync failed: ${data.error}`);
+      }
+    } catch (err) {
+      setCisbpResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setCisbpSyncing(false);
     }
   };
 
@@ -161,11 +190,18 @@ export default function AdminPage() {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
               >
                 <div>
-                  <p className="font-medium text-sm text-gray-900">{db.name}</p>
+                  <p className="font-medium text-sm text-gray-900">
+                    {db.name}
+                    {db.version && (
+                      <span className="ml-2 text-xs text-gray-400 font-normal">
+                        v{db.version}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {db.motifCount} motifs
+                    {db.motifCount.toLocaleString()} motifs
                     {db.taxonGroups.length > 0 &&
-                      ` \u00B7 ${db.taxonGroups.join(", ")}`}
+                      ` \u00B7 ${db.taxonGroups.length} groups`}
                     {db.lastSyncedAt &&
                       ` \u00B7 Last synced: ${new Date(db.lastSyncedAt).toLocaleDateString()}`}
                   </p>
@@ -184,11 +220,11 @@ export default function AdminPage() {
           </div>
         ) : (
           <p className="text-sm text-gray-500 mb-6">
-            No reference databases configured. Sync JASPAR to get started.
+            No reference databases configured. Sync JASPAR or upload CIS-BP to get started.
           </p>
         )}
 
-        {/* Sync Controls */}
+        {/* JASPAR Sync Controls */}
         <div className="border-t border-gray-200 pt-4">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
             Sync JASPAR Database
@@ -220,12 +256,40 @@ export default function AdminPage() {
 
           <div className="flex items-center gap-3">
             <Button onClick={handleSync} disabled={syncing}>
-              {syncing ? "Syncing..." : "Start Sync"}
+              {syncing ? "Syncing..." : "Start JASPAR Sync"}
             </Button>
             {syncResult && (
               <p className="text-sm text-gray-600">{syncResult}</p>
             )}
           </div>
+        </div>
+
+        {/* CIS-BP Sync Controls */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">
+            Sync CIS-BP Database
+          </h4>
+          <p className="text-xs text-gray-500 mb-3">
+            Downloads{" "}
+            <a
+              href="https://cisbp.ccbr.utoronto.ca/entireDownload.php"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600"
+            >
+              CIS-BP Build 3.00
+            </a>{" "}
+            (PWMs + TF_Information) directly from the server. This replaces any
+            existing CIS-BP data and may take a few minutes.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleCisbpSync} disabled={cisbpSyncing}>
+              {cisbpSyncing ? "Syncing..." : "Sync CIS-BP from Server"}
+            </Button>
+          </div>
+          {cisbpResult && (
+            <p className="text-sm text-gray-600 mt-2">{cisbpResult}</p>
+          )}
         </div>
       </Card>
     </div>

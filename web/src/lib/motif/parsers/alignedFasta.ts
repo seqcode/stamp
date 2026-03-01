@@ -1,4 +1,5 @@
 import type { ParsedMotif } from "@/types";
+import { IUPAC_MAP } from "./consensus";
 
 /**
  * Parse aligned FASTA format into motifs.
@@ -15,6 +16,8 @@ import type { ParsedMotif } from "@/types";
  * Each >header starts a new motif. All lines until the next > are
  * aligned DNA sequences for that motif. At each position, bases are
  * counted across all sequences to build a PFM row [countA, countC, countG, countT].
+ * IUPAC degenerate bases (R, Y, S, W, K, M, B, D, H, V, N) contribute fractional
+ * counts according to their standard ambiguity definitions.
  * Gap characters ("-") are not counted toward any base.
  */
 export function parseAlignedFasta(text: string): ParsedMotif[] {
@@ -40,13 +43,15 @@ export function parseAlignedFasta(text: string): ParsedMotif[] {
       for (const seq of currentSeqs) {
         if (pos >= seq.length) continue;
         const ch = seq[pos].toUpperCase();
-        switch (ch) {
-          case "A": a++; break;
-          case "C": c++; break;
-          case "G": g++; break;
-          case "T":
-          case "U": t++; break;
-          // Gap characters ("-") and other characters are skipped
+        // Gap characters are skipped; all other characters are looked up in
+        // the IUPAC map so degenerate codes contribute fractional counts.
+        if (ch === "-") continue;
+        const freqs = IUPAC_MAP[ch];
+        if (freqs) {
+          a += freqs[0];
+          c += freqs[1];
+          g += freqs[2];
+          t += freqs[3];
         }
       }
       matrix.push([a, c, g, t]);

@@ -29,7 +29,7 @@ export default function RootLayout({
                   Submit Job
                 </a>
                 <a
-                  href="https://github.com/shaunmahony/stamp"
+                  href="https://github.com/seqcode/stamp"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gray-900"
@@ -41,8 +41,22 @@ export default function RootLayout({
           </header>
           <main className="flex-1">{children}</main>
           <footer className="border-t border-gray-200 bg-gray-50 py-6 text-center text-sm text-gray-500">
-            STAMP v2.0 &mdash; Similarity, Tree-building, &amp; Alignment of
-            Motifs and Profiles
+            <p>
+              STAMP v2.0 &mdash; Similarity, Tree-building, &amp; Alignment of
+              Motifs and Profiles
+            </p>
+            <p className="mt-2 text-xs text-gray-400">
+              <a
+                href="https://academic.oup.com/nar/article/35/suppl_2/W253/2920802"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-500 underline underline-offset-2"
+              >
+                Mahony S, Benos PV. STAMP: a web tool for exploring DNA-binding
+                motif similarities. <em>Nucleic Acids Res.</em> 2007
+                Jul;35(Web Server issue):W253-8.
+              </a>
+            </p>
           </footer>
         </div>
       </body>

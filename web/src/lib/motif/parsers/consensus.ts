@@ -4,7 +4,7 @@ import type { ParsedMotif } from "@/types";
  * IUPAC degenerate code → PFM frequency mapping.
  * Each code maps to [A, C, G, T] frequencies.
  */
-const IUPAC_MAP: Record<string, [number, number, number, number]> = {
+export const IUPAC_MAP: Record<string, [number, number, number, number]> = {
   A: [1, 0, 0, 0],
   C: [0, 1, 0, 0],
   G: [0, 0, 1, 0],

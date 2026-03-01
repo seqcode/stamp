@@ -44,7 +44,7 @@ const JobSchema = new Schema<IJob>(
         {
           name: String,
           matrix: [[Number]],
-          format: { type: String, enum: ["transfac", "meme", "jaspar", "modisco"] },
+          format: { type: String, enum: ["transfac", "meme", "jaspar", "modisco", "consensus", "aligned-fasta"] },
         },
       ],
       rawText: { type: String, default: null },
@@ -64,7 +64,7 @@ const JobSchema = new Schema<IJob>(
 
     matching: {
       enabled: { type: Boolean, default: false },
-      taxonGroups: [String],
+      databases: [{ slug: String, groups: [String] }],
       topMatches: { type: Number, default: 5 },
       customDbFileKey: { type: String, default: null },
     },

@@ -3,12 +3,13 @@ import fs from "fs";
 import path from "path";
 import { Job as JobModel } from "../src/lib/db/models/Job";
 import { Motif } from "../src/lib/db/models/Motif";
+import { ReferenceDatabase } from "../src/lib/db/models/ReferenceDatabase";
 import { toStampTransfac } from "../src/lib/motif/converter";
 import { selectScoreDistFile } from "../src/lib/stamp/scoreDistSelector";
 import { runStamp } from "../src/lib/stamp/runner";
 import { parseWebmodeOutput } from "../src/lib/stamp/parser";
 import type { StampJobData } from "../src/lib/queue/jobs";
-import type { JobResults } from "../src/types";
+import type { JobResults, DatabaseSelection } from "../src/types";
 
 const JOBS_DATA_DIR = process.env.JOBS_DATA_DIR || "/tmp/stamp-jobs";
 
@@ -37,9 +38,9 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
 
     // Prepare match database file if matching is enabled
     let matchFile: string | undefined;
-    if (matching.enabled && matching.taxonGroups.length > 0) {
+    if (matching.enabled && matching.databases && matching.databases.length > 0) {
       matchFile = path.join(jobDir, "reference.transfac");
-      await generateReferenceDb(matchFile, matching.taxonGroups);
+      await generateReferenceDb(matchFile, matching.databases);
     } else if (matching.enabled && matching.customDbFileKey) {
       matchFile = matching.customDbFileKey;
     }
@@ -94,20 +95,46 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       inputMotifMap.set(m.name, m.matrix);
     }
 
+    // Build URL pattern lookup from selected databases
+    const urlPatternMap = new Map<string, string>();
+    if (matching.databases && matching.databases.length > 0) {
+      const slugs = matching.databases.map((d) => d.slug);
+      const refDbs = await ReferenceDatabase.find({ slug: { $in: slugs } }).lean() as Array<{ source?: string; urlPattern?: string }>;
+      for (const db of refDbs) {
+        if (db.source && db.urlPattern) {
+          urlPatternMap.set(db.source.toUpperCase(), db.urlPattern);
+        }
+      }
+    }
+
     // Enrich match results with query motif matrices and database metadata
     const matchPairs = parsed.matchDetails || [];
     for (const matchResult of matchPairs) {
       for (const entry of matchResult.matches) {
         entry.queryMotifMatrix = inputMotifMap.get(matchResult.queryName) || null;
 
-        // Parse "MA0139.1::CTCF" format to extract database metadata
+        // Parse "JASPAR::MA0139.1::CTCF" three-part format to extract DB metadata
         if (entry.name && entry.name.includes("::")) {
-          const [matrixId, ...rest] = entry.name.split("::");
-          const displayName = rest.join("::");
-          entry.dbId = matrixId;
-          entry.dbSource = "JASPAR";
-          entry.dbUrl = `https://jaspar.elixir.no/matrix/${matrixId}`;
-          entry.name = displayName || matrixId;
+          const parts = entry.name.split("::");
+          if (parts.length >= 3) {
+            const [dbSource, matrixId, ...rest] = parts;
+            const displayName = rest.join("::") || matrixId;
+            entry.dbSource = dbSource;
+            entry.dbId = matrixId;
+            entry.name = displayName;
+            const pattern = urlPatternMap.get(dbSource.toUpperCase());
+            if (pattern) {
+              entry.dbUrl = pattern.replace("{id}", matrixId);
+            }
+          } else {
+            // Legacy two-part format: "MA0139.1::CTCF"
+            const [matrixId, ...rest] = parts;
+            const displayName = rest.join("::");
+            entry.dbId = matrixId;
+            entry.dbSource = "JASPAR";
+            entry.dbUrl = `https://jaspar.elixir.no/matrix/${matrixId}`;
+            entry.name = displayName || matrixId;
+          }
         }
       }
     }
@@ -167,25 +194,48 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
 
 /**
  * Generate a TRANSFAC reference database file from MongoDB motifs.
+ * Combines motifs from all selected databases into a single file.
  */
 async function generateReferenceDb(
   outputPath: string,
-  taxonGroups: string[]
+  databases: DatabaseSelection[]
 ): Promise<void> {
-  const motifs = await Motif.find({ taxGroup: { $in: taxonGroups } }).lean();
+  // Build query: for each database selection, find motifs matching the slug and groups
+  const allMotifs: Array<{ dbSource: string; matrixId: string; name: string; pfm: { A: number[]; C: number[]; G: number[]; T: number[] } }> = [];
 
-  if (motifs.length === 0) {
+  for (const dbSel of databases) {
+    const refDb = await ReferenceDatabase.findOne({ slug: dbSel.slug }).lean() as { _id: unknown; source?: string } | null;
+    if (!refDb) continue;
+
+    const query: Record<string, unknown> = { databaseRef: refDb._id };
+    if (dbSel.groups.length > 0) {
+      query.group = { $in: dbSel.groups };
+    }
+
+    const motifs = await Motif.find(query).lean();
+    const dbSourceLabel = refDb.source?.toUpperCase() || "UNKNOWN";
+    for (const m of motifs) {
+      allMotifs.push({
+        dbSource: (m as Record<string, unknown>).dbSource as string || dbSourceLabel,
+        matrixId: m.matrixId,
+        name: m.name,
+        pfm: m.pfm,
+      });
+    }
+  }
+
+  if (allMotifs.length === 0) {
+    const dbNames = databases.map((d) => d.slug).join(", ");
     throw new Error(
-      `No motifs found for taxon groups: ${taxonGroups.join(", ")}. ` +
-        "Please sync the JASPAR database first via the admin panel."
+      `No motifs found for selected databases: ${dbNames}. ` +
+        "Please sync databases first via the admin panel."
     );
   }
 
   const lines: string[] = [];
-  for (const motif of motifs) {
-    // Include matrixId in the DE line so STAMP outputs it as the match name.
-    // Format: "MA0139.1::CTCF" — frontend parses this to extract DB info.
-    const deName = motif.matrixId ? `${motif.matrixId}::${motif.name}` : motif.name;
+  for (const motif of allMotifs) {
+    // Three-part DE line: "JASPAR::MA0139.1::CTCF" — frontend parses this to extract DB info.
+    const deName = `${motif.dbSource}::${motif.matrixId}::${motif.name}`;
     lines.push(`DE\t${deName}\t`);
     const length = motif.pfm.A.length;
     for (let pos = 0; pos < length; pos++) {

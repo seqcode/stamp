@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const params = { ...DEFAULT_PARAMS, ...validated.params };
     const matching = {
       enabled: validated.matching.enabled,
-      taxonGroups: validated.matching.taxonGroups,
+      databases: validated.matching.databases,
       topMatches: validated.matching.topMatches,
       customDbFileKey: validated.matching.customDbFileKey,
     };

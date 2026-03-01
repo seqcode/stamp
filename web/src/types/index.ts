@@ -95,9 +95,14 @@ export interface JobResults {
   stampStdout: string;
 }
 
+export interface DatabaseSelection {
+  slug: string;
+  groups: string[];
+}
+
 export interface MatchingConfig {
   enabled: boolean;
-  taxonGroups: string[];
+  databases: DatabaseSelection[];
   topMatches: number;
   customDbFileKey: string | null;
 }

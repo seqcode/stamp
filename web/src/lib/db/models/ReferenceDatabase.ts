@@ -3,9 +3,11 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IReferenceDatabase extends Document {
   name: string;
   slug: string;
-  source: "jaspar" | "custom";
+  source: "jaspar" | "cisbp" | "custom";
   description: string;
   jasparCollection: string | null;
+  version: string | null;
+  urlPattern: string | null;
   lastSyncedAt: Date | null;
   motifCount: number;
   taxonGroups: string[];
@@ -19,9 +21,11 @@ const ReferenceDatabaseSchema = new Schema<IReferenceDatabase>(
   {
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true, index: true },
-    source: { type: String, required: true, enum: ["jaspar", "custom"] },
+    source: { type: String, required: true, enum: ["jaspar", "cisbp", "custom"] },
     description: { type: String, default: "" },
     jasparCollection: { type: String, default: null },
+    version: { type: String, default: null },
+    urlPattern: { type: String, default: null },
     lastSyncedAt: { type: Date, default: null },
     motifCount: { type: Number, default: 0 },
     taxonGroups: [String],

@@ -33,6 +33,8 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
       source: "jaspar",
       description: `JASPAR ${collection} transcription factor binding profiles`,
       jasparCollection: collection,
+      version: "2024",
+      urlPattern: "https://jaspar.elixir.no/matrix/{id}",
       taxonGroups: [],
       isActive: true,
     });
@@ -94,6 +96,8 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
                 baseId: detail.base_id,
                 version: detail.version,
                 name: detail.name,
+                dbSource: "JASPAR",
+                group: detail.tax_group,
                 jasparCollection: detail.collection,
                 taxGroup: detail.tax_group,
                 tfClass: detail.class,
@@ -131,7 +135,7 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
 
   // Update reference database stats
   const motifCount = await Motif.countDocuments({ databaseRef: dbId });
-  const storedTaxonGroups = await Motif.distinct("taxGroup", { databaseRef: dbId });
+  const storedTaxonGroups = await Motif.distinct("group", { databaseRef: dbId });
 
   await ReferenceDatabase.updateOne(
     { _id: dbId },
