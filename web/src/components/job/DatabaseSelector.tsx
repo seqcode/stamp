@@ -59,7 +59,7 @@ export function DatabaseSelector({ value, onChange }: DatabaseSelectorProps) {
   const sourceLabels: Record<string, string> = {
     jaspar: "JASPAR",
     hocomoco: "HOCOMOCO",
-    vierstra: "Vierstra Archetypes",
+    vierstra: "Vierstra clustered",
     cisbp: "CIS-BP",
     custom: "Custom",
   };

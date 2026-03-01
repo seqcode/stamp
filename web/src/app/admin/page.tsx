@@ -395,10 +395,10 @@ export default function AdminPage() {
         {/* Vierstra Sync Controls */}
         <div className="border-t border-gray-200 pt-4 mt-4">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
-            Sync Vierstra Motif Archetypes
+            Sync Vierstra Clustered Motifs
           </h4>
           <p className="text-xs text-gray-500 mb-3">
-            Downloads consensus archetype models from the{" "}
+            Downloads consensus clustered models from the{" "}
             <a
               href="https://resources.altius.org/~jvierstra/projects/motif-clustering-v2.0beta/"
               target="_blank"
@@ -411,7 +411,7 @@ export default function AdminPage() {
           </p>
           <div className="flex items-center gap-3">
             <Button onClick={handleVierstraSync} disabled={vierstraSyncing}>
-              {vierstraSyncing ? "Syncing..." : "Sync Vierstra Archetypes"}
+              {vierstraSyncing ? "Syncing..." : "Sync Vierstra Clustered"}
             </Button>
           </div>
           {vierstraResult && (

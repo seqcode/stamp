@@ -40,17 +40,23 @@ export async function syncVierstra(): Promise<VierstraSyncResult> {
   }
 
   // ── Find or create the ReferenceDatabase record ───────────────────────────
-  const slug = "vierstra-archetypes";
+  const slug = "vierstra-clustered";
+  const projectUrl =
+    "https://resources.altius.org/~jvierstra/projects/motif-clustering-v2.0beta/";
   let refDb = await ReferenceDatabase.findOne({ slug });
   if (!refDb) {
+    // Also check for old slug in case of rename
+    refDb = await ReferenceDatabase.findOne({ slug: "vierstra-archetypes" });
+  }
+  if (!refDb) {
     refDb = new ReferenceDatabase({
-      name: "Vierstra Archetypes",
+      name: "Vierstra clustered",
       slug,
       source: "vierstra",
       description:
         "Non-redundant TF motif clustering v2.0 — consensus archetype models (Vierstra et al.)",
       version: "2.0",
-      urlPattern: null,
+      urlPattern: projectUrl,
       taxonGroups: [],
       isActive: true,
     });
@@ -58,7 +64,7 @@ export async function syncVierstra(): Promise<VierstraSyncResult> {
   } else {
     await ReferenceDatabase.updateOne(
       { _id: refDb._id },
-      { version: "2.0" }
+      { slug, name: "Vierstra clustered", version: "2.0", urlPattern: projectUrl }
     );
   }
 
@@ -86,7 +92,7 @@ export async function syncVierstra(): Promise<VierstraSyncResult> {
       databaseRef: dbId,
       matrixId: rec.archetypeId,
       name: rec.tfNames,
-      dbSource: "VIERSTRA",
+      dbSource: "Vierstra",
       group: rec.family,
       tfClass: null,
       family: rec.family,

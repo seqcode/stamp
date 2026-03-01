@@ -102,7 +102,10 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       inputMotifMap.set(m.name, m.matrix);
     }
 
-    // Build URL pattern and home URL lookups from selected databases
+    // Build URL pattern and home URL lookups from selected databases.
+    // Keys are normalized (uppercase, hyphens stripped) so that e.g.
+    // ReferenceDatabase.source "cisbp" matches motif.dbSource "CIS-BP".
+    const normalizeKey = (s: string) => s.replace(/-/g, "").toUpperCase();
     const urlPatternMap = new Map<string, string>();
     const dbHomeUrlMap = new Map<string, string>();
     if (matching.databases && matching.databases.length > 0) {
@@ -110,12 +113,17 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       const refDbs = await ReferenceDatabase.find({ slug: { $in: slugs } }).lean() as Array<{ source?: string; urlPattern?: string }>;
       for (const db of refDbs) {
         if (db.source && db.urlPattern) {
-          const key = db.source.toUpperCase();
+          const key = normalizeKey(db.source);
           urlPatternMap.set(key, db.urlPattern);
-          try {
-            dbHomeUrlMap.set(key, new URL(db.urlPattern).origin);
-          } catch {
-            // If urlPattern isn't a valid URL, skip home URL
+          if (db.urlPattern.includes("{id}")) {
+            try {
+              dbHomeUrlMap.set(key, new URL(db.urlPattern).origin);
+            } catch {
+              // If urlPattern isn't a valid URL, skip home URL
+            }
+          } else {
+            // No per-motif URL template; use the full URL as the home link
+            dbHomeUrlMap.set(key, db.urlPattern);
           }
         }
       }
@@ -136,9 +144,9 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
             entry.dbSource = dbSource;
             entry.dbId = matrixId;
             entry.name = displayName;
-            const sourceKey = dbSource.toUpperCase();
+            const sourceKey = normalizeKey(dbSource);
             const pattern = urlPatternMap.get(sourceKey);
-            if (pattern) {
+            if (pattern && pattern.includes("{id}")) {
               // For CIS-BP, use the TF identifier (baseId) for per-entry URLs
               const urlId = baseIdMap.get(matrixId) || matrixId;
               entry.dbUrl = pattern.replace("{id}", urlId);
