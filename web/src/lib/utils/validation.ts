@@ -27,7 +27,13 @@ export const matchingConfigSchema = z.object({
   enabled: z.boolean().default(false),
   databases: z.array(databaseSelectionSchema).default([]),
   topMatches: z.number().int().min(1).max(50).default(5),
-  customDbFileKey: z.string().nullable().default(null),
+  customDbFileKey: z
+    .string()
+    .nullable()
+    .default(null)
+    .refine((val) => val === null || (!val.includes("..") && !val.includes("/")), {
+      message: "Invalid custom database key",
+    }),
 });
 
 export const jobSubmitSchema = z.object({

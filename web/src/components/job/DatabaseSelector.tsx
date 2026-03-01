@@ -17,11 +17,13 @@ interface DatabaseInfo {
 interface DatabaseSelectorProps {
   value: MatchingConfig;
   onChange: (config: MatchingConfig) => void;
+  /** Callback when a custom reference database file is selected or cleared. */
+  onCustomFileChange?: (file: File | null) => void;
 }
 
 const INITIAL_VISIBLE = 20;
 
-export function DatabaseSelector({ value, onChange }: DatabaseSelectorProps) {
+export function DatabaseSelector({ value, onChange, onCustomFileChange }: DatabaseSelectorProps) {
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
   const [expandedSources, setExpandedSources] = useState<Set<string>>(
     new Set(["jaspar"])
@@ -228,6 +230,7 @@ export function DatabaseSelector({ value, onChange }: DatabaseSelectorProps) {
                       customDbFileKey: file.name,
                       enabled: true,
                     });
+                    onCustomFileChange?.(file);
                   }
                 }}
               />

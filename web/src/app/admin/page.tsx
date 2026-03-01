@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { JASPAR_TAXON_GROUPS } from "@/types";
+import { useAdminAuth } from "@/lib/auth/AdminAuthContext";
 
 interface JobStats {
   total: number;
@@ -26,6 +27,7 @@ interface DatabaseInfo {
 }
 
 export default function AdminPage() {
+  const { adminHeaders } = useAdminAuth();
   const [stats, setStats] = useState<JobStats | null>(null);
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
   const [syncing, setSyncing] = useState(false);
@@ -71,7 +73,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/databases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders("POST"),
         body: JSON.stringify({
           action: "sync",
           collection: "CORE",
@@ -101,7 +103,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/sync-hocomoco", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders("POST"),
         body: JSON.stringify({ collection: hocomocoCollection }),
       });
       const data = await res.json();
@@ -126,7 +128,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/sync-vierstra", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders("POST"),
       });
       const data = await res.json();
       if (res.ok) {
@@ -150,7 +152,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/sync-cisbp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders("POST"),
       });
       const data = await res.json();
       if (res.ok) {
@@ -173,7 +175,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/jobs", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders("POST"),
         body: JSON.stringify({ action: "cleanup", olderThanDays: cleanupDays }),
       });
       const data = await res.json();

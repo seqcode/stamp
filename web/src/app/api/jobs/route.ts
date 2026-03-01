@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 import { connectDB } from "@/lib/db/mongoose";
 import { Job } from "@/lib/db/models/Job";
 import { generateJobId } from "@/lib/utils/idGenerator";
@@ -6,9 +8,22 @@ import { jobSubmitSchema } from "@/lib/utils/validation";
 import { parseMotifs } from "@/lib/motif/parsers";
 import { enqueueStampJob } from "@/lib/queue/jobs";
 import { DEFAULT_PARAMS } from "@/types";
+import { withRateLimit } from "@/lib/auth/rateLimit";
+
+const JOBS_DATA_DIR = process.env.JOBS_DATA_DIR || "/tmp/stamp-jobs";
+
+const RATE_LIMIT_JOBS =
+  Number(process.env.RATE_LIMIT_JOBS_PER_HOUR) || 20;
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: N jobs per hour per IP (default 20)
+    const rateLimited = await withRateLimit(request, "jobs", {
+      windowMs: 3600000,
+      maxRequests: RATE_LIMIT_JOBS,
+    });
+    if (rateLimited) return rateLimited;
+
     await connectDB();
 
     // Parse form data (supports both JSON and multipart)
@@ -17,6 +32,8 @@ export async function POST(request: NextRequest) {
     let fileName: string | null = null;
     let bodyParams: Record<string, unknown> = {};
 
+    let customDbFile: File | null = null;
+
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const file = formData.get("motifFile") as File | null;
@@ -24,6 +41,7 @@ export async function POST(request: NextRequest) {
       const paramsJson = formData.get("params") as string;
       const matchingJson = formData.get("matching") as string;
       const email = formData.get("email") as string | null;
+      customDbFile = formData.get("customDbFile") as File | null;
 
       if (file && file.size > 0) {
         motifText = await file.text();
@@ -88,6 +106,21 @@ export async function POST(request: NextRequest) {
 
     // Create job
     const jobId = generateJobId();
+
+    // If a custom reference database file was uploaded, save it to the job dir
+    // and use a server-derived safe path (never trust the user-supplied filename)
+    if (customDbFile && customDbFile.size > 0) {
+      const jobDir = path.join(JOBS_DATA_DIR, jobId);
+      fs.mkdirSync(jobDir, { recursive: true });
+      const safeCustomDbPath = path.join(jobDir, "custom-ref.transfac");
+      const customDbContent = await customDbFile.text();
+      fs.writeFileSync(safeCustomDbPath, customDbContent, "utf-8");
+      matching.customDbFileKey = safeCustomDbPath;
+    } else {
+      // Clear any user-supplied customDbFileKey — only server-derived paths are trusted
+      matching.customDbFileKey = null;
+    }
+
     const job = new Job({
       jobId,
       status: "queued",

@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseMotifs } from "@/lib/motif/parsers";
+import { withRateLimit } from "@/lib/auth/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 60 requests per minute per IP
+    const rateLimited = await withRateLimit(request, "motifs-parse", {
+      windowMs: 60000,
+      maxRequests: 60,
+    });
+    if (rateLimited) return rateLimited;
+
     const body = await request.json();
     const motifText = body.motifText as string;
 

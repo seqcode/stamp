@@ -24,6 +24,7 @@ export default function HomePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [motifCount, setMotifCount] = useState(0);
+  const [customDbFile, setCustomDbFile] = useState<File | null>(null);
 
   const handleSubmit = async () => {
     if (!motifText.trim()) {
@@ -35,16 +36,30 @@ export default function HomePage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          motifText,
-          params,
-          matching,
-          email: email || null,
-        }),
-      });
+      let res: Response;
+
+      if (customDbFile) {
+        // Use multipart/form-data when a custom reference database file is attached
+        const formData = new FormData();
+        formData.append("motifText", motifText);
+        formData.append("params", JSON.stringify(params));
+        formData.append("matching", JSON.stringify(matching));
+        formData.append("customDbFile", customDbFile);
+        if (email) formData.append("email", email);
+
+        res = await fetch("/api/jobs", { method: "POST", body: formData });
+      } else {
+        res = await fetch("/api/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            motifText,
+            params,
+            matching,
+            email: email || null,
+          }),
+        });
+      }
 
       const data = await res.json();
 
@@ -98,7 +113,11 @@ export default function HomePage() {
           <CardHeader>
             <CardTitle>3. Database Matching</CardTitle>
           </CardHeader>
-          <DatabaseSelector value={matching} onChange={setMatching} />
+          <DatabaseSelector
+            value={matching}
+            onChange={setMatching}
+            onCustomFileChange={setCustomDbFile}
+          />
         </Card>
 
         {/* Email Notification */}

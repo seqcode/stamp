@@ -49,7 +49,16 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       matchFile = path.join(jobDir, "reference.transfac");
       baseIdMap = await generateReferenceDb(matchFile, matching.databases);
     } else if (matching.enabled && matching.customDbFileKey) {
-      matchFile = matching.customDbFileKey;
+      // Validate that the custom DB file path is within JOBS_DATA_DIR
+      // (it should have been server-derived in the jobs API route)
+      const resolved = path.resolve(matching.customDbFileKey);
+      if (!resolved.startsWith(path.resolve(JOBS_DATA_DIR))) {
+        throw new Error("Invalid custom database path");
+      }
+      if (!fs.existsSync(resolved)) {
+        throw new Error("Custom database file not found");
+      }
+      matchFile = resolved;
     }
 
     // Store file paths

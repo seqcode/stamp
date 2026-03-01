@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
+import { AdminAuthProvider, useAdminAuth } from "@/lib/auth/AdminAuthContext";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AdminGate({ children }: { children: React.ReactNode }) {
+  const { setCsrfToken } = useAdminAuth();
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
   const [password, setPassword] = useState("");
@@ -33,10 +31,15 @@ export default function AdminLayout({
         body: JSON.stringify({ password }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
+        // Store CSRF token from session for use in subsequent admin requests
+        if (data.csrfToken) {
+          setCsrfToken(data.csrfToken);
+        }
         setAuthenticated(true);
       } else {
-        const data = await res.json();
         setError(data.error || "Authentication failed.");
       }
     } catch {
@@ -77,4 +80,16 @@ export default function AdminLayout({
   }
 
   return <>{children}</>;
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AdminAuthProvider>
+      <AdminGate>{children}</AdminGate>
+    </AdminAuthProvider>
+  );
 }

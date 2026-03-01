@@ -4,6 +4,15 @@ import type { JobResults, StampParams } from "@/types";
  * Generate a self-contained HTML results page for inclusion in the ZIP download.
  * The page includes inline CSS and JavaScript for rendering sequence logos via canvas.
  */
+// Server-side HTML escaping for template literal interpolation
+function escapeHtmlServer(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function generateResultsHtml(
   jobId: string,
   params: StampParams,
@@ -17,12 +26,14 @@ export function generateResultsHtml(
     createdAt,
   });
 
+  const safeJobId = escapeHtmlServer(jobId);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STAMP 2.0 Results - ${jobId}</title>
+<title>STAMP 2.0 Results - ${safeJobId}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; padding: 2rem; max-width: 1200px; margin: 0 auto; }
@@ -66,12 +77,23 @@ export function generateResultsHtml(
 </head>
 <body>
 <h1>STAMP 2.0 Results</h1>
-<div class="subtitle">Job ${jobId} &middot; Generated ${new Date(createdAt).toLocaleString()}</div>
+<div class="subtitle">Job ${safeJobId} &middot; Generated ${escapeHtmlServer(new Date(createdAt).toLocaleString())}</div>
 
 <div id="app"></div>
 
 <script>
 var DATA = ${data};
+
+// XSS prevention helpers
+function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str);
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+function safeUrl(url) {
+  if (typeof url !== 'string') return '';
+  try { var p = new URL(url); if (p.protocol === 'https:' || p.protocol === 'http:') return url; } catch(e) {}
+  return '';
+}
 
 var COLORS = { A: '#CC0000', C: '#0000CC', G: '#FFB300', T: '#008000' };
 var LETTERS = ['A', 'C', 'G', 'T'];
@@ -319,7 +341,7 @@ var TREE_LABELS = {UPGMA:'UPGMA',NJ:'Neighbor Joining (NJ)'};
   grid.className = 'param-grid';
   function addParam(label, value) {
     var l = document.createElement('div');
-    l.innerHTML = '<span class="label">' + label + ':</span> <span class="value">' + value + '</span>';
+    l.innerHTML = '<span class="label">' + escapeHtml(label) + ':</span> <span class="value">' + escapeHtml(value) + '</span>';
     grid.appendChild(l);
   }
   addParam('Column Metric', METRIC_LABELS[p.columnMetric] || p.columnMetric);
@@ -368,7 +390,7 @@ if (res.multipleAlignment && res.multipleAlignment.length > 0) {
       row.className = 'motif-row';
       var name = document.createElement('div');
       name.className = 'motif-name';
-      name.innerHTML = entry.name + '<span class="strand">(' + entry.strand + ')</span>';
+      name.innerHTML = escapeHtml(entry.name) + '<span class="strand">(' + escapeHtml(entry.strand) + ')</span>';
       var c = document.createElement('canvas');
       c.style.display = 'block';
       canvases.push({ canvas: c, matrix: entry.alignedMatrix });
@@ -418,7 +440,7 @@ if (res.matchPairs && res.matchPairs.length > 0) {
       block.className = 'match-block';
       var header = document.createElement('div');
       header.className = 'match-header';
-      header.innerHTML = '<span>' + result.queryName + '</span><span style="font-size:0.75rem;color:#6b7280">' + result.matches.length + ' match' + (result.matches.length !== 1 ? 'es' : '') + ' <span class="toggle">\\u25B2</span></span>';
+      header.innerHTML = '<span>' + escapeHtml(result.queryName) + '</span><span style="font-size:0.75rem;color:#6b7280">' + result.matches.length + ' match' + (result.matches.length !== 1 ? 'es' : '') + ' <span class="toggle">\\u25B2</span></span>';
       var body = document.createElement('div');
       body.className = 'match-body';
       header.addEventListener('click', function() {
@@ -443,9 +465,14 @@ if (res.matchPairs && res.matchPairs.length > 0) {
         info.className = 'match-info';
         var nameHtml = '<span class="name">' + (idx + 1) + '. ';
         if (match.dbUrl) {
-          nameHtml += '<a href="' + match.dbUrl + '" target="_blank">' + match.name + '</a>';
+          var url = safeUrl(match.dbUrl);
+          if (url) {
+            nameHtml += '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(match.name) + '</a>';
+          } else {
+            nameHtml += escapeHtml(match.name);
+          }
         } else {
-          nameHtml += match.name;
+          nameHtml += escapeHtml(match.name);
         }
         nameHtml += '</span>';
         info.innerHTML = nameHtml;
@@ -466,11 +493,11 @@ if (res.matchPairs && res.matchPairs.length > 0) {
         // Alignment info
         var alignInfo = document.createElement('div');
         alignInfo.className = 'align-info';
-        alignInfo.innerHTML = '<span style="font-family:monospace">E-value: ' + match.evalue.toExponential(2) + '</span>';
+        alignInfo.innerHTML = '<span style="font-family:monospace">E-value: ' + escapeHtml(match.evalue.toExponential(2)) + '</span>';
         if (match.queryLength > 0) {
           alignInfo.innerHTML += '<span class="sep">|</span>'
-            + '<span>Query(' + match.queryStrand + '): ' + match.queryAlignStart + '\\u2013' + match.queryAlignEnd + ' / ' + match.queryLength + ' pos</span>'
-            + '<span>Match(' + match.matchStrand + '): ' + match.matchAlignStart + '\\u2013' + match.matchAlignEnd + ' / ' + match.matchLength + ' pos</span>';
+            + '<span>Query(' + escapeHtml(match.queryStrand) + '): ' + escapeHtml(String(match.queryAlignStart)) + '\\u2013' + escapeHtml(String(match.queryAlignEnd)) + ' / ' + escapeHtml(String(match.queryLength)) + ' pos</span>'
+            + '<span>Match(' + escapeHtml(match.matchStrand) + '): ' + escapeHtml(String(match.matchAlignStart)) + '\\u2013' + escapeHtml(String(match.matchAlignEnd)) + ' / ' + escapeHtml(String(match.matchLength)) + ' pos</span>';
         }
         entry.appendChild(alignInfo);
 
