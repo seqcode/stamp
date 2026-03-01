@@ -312,9 +312,9 @@ function MatchRow({
               )
             )}
             {match.dbSource && (
-              match.dbUrl ? (
+              match.dbHomeUrl ? (
                 <a
-                  href={match.dbUrl}
+                  href={match.dbHomeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded hover:bg-blue-600 transition-colors"

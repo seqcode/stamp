@@ -143,6 +143,8 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
       lastSyncedAt: new Date(),
       motifCount,
       taxonGroups: storedTaxonGroups,
+      version: "2024",
+      urlPattern: "https://jaspar.elixir.no/matrix/{id}",
     }
   );
 

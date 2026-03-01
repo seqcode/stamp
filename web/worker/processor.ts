@@ -95,14 +95,21 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       inputMotifMap.set(m.name, m.matrix);
     }
 
-    // Build URL pattern lookup from selected databases
+    // Build URL pattern and home URL lookups from selected databases
     const urlPatternMap = new Map<string, string>();
+    const dbHomeUrlMap = new Map<string, string>();
     if (matching.databases && matching.databases.length > 0) {
       const slugs = matching.databases.map((d) => d.slug);
       const refDbs = await ReferenceDatabase.find({ slug: { $in: slugs } }).lean() as Array<{ source?: string; urlPattern?: string }>;
       for (const db of refDbs) {
         if (db.source && db.urlPattern) {
-          urlPatternMap.set(db.source.toUpperCase(), db.urlPattern);
+          const key = db.source.toUpperCase();
+          urlPatternMap.set(key, db.urlPattern);
+          try {
+            dbHomeUrlMap.set(key, new URL(db.urlPattern).origin);
+          } catch {
+            // If urlPattern isn't a valid URL, skip home URL
+          }
         }
       }
     }
@@ -122,9 +129,14 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
             entry.dbSource = dbSource;
             entry.dbId = matrixId;
             entry.name = displayName;
-            const pattern = urlPatternMap.get(dbSource.toUpperCase());
+            const sourceKey = dbSource.toUpperCase();
+            const pattern = urlPatternMap.get(sourceKey);
             if (pattern) {
               entry.dbUrl = pattern.replace("{id}", matrixId);
+            }
+            const homeUrl = dbHomeUrlMap.get(sourceKey);
+            if (homeUrl) {
+              entry.dbHomeUrl = homeUrl;
             }
           } else {
             // Legacy two-part format: "MA0139.1::CTCF"
@@ -133,6 +145,7 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
             entry.dbId = matrixId;
             entry.dbSource = "JASPAR";
             entry.dbUrl = `https://jaspar.elixir.no/matrix/${matrixId}`;
+            entry.dbHomeUrl = "https://jaspar.elixir.no";
             entry.name = displayName || matrixId;
           }
         }

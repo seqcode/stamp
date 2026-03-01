@@ -69,6 +69,7 @@ export interface MatchEntry {
   dbSource?: string;      // e.g. "JASPAR"
   dbId?: string;          // e.g. "MA0139.1"
   dbUrl?: string;         // e.g. "https://jaspar.elixir.no/matrix/MA0139.1"
+  dbHomeUrl?: string;     // e.g. "https://jaspar.elixir.no"
   dbCollection?: string;  // e.g. "CORE"
 }
 
