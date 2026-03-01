@@ -286,12 +286,17 @@ function SourceBlock({
             {expanded ? "\u25BC" : "\u25B6"}
           </span>
           <span className="text-sm font-medium text-gray-900">{label}</span>
-          {databases.map((db) => (
-            <span key={db.slug} className="text-xs text-gray-500">
-              {db.version && `v${db.version}`} &middot;{" "}
-              {db.motifCount.toLocaleString()} motifs
+          {databases.length === 1 ? (
+            <span className="text-xs text-gray-500">
+              {databases[0].version && `v${databases[0].version}`} &middot;{" "}
+              {databases[0].motifCount.toLocaleString()} motifs
             </span>
-          ))}
+          ) : (
+            <span className="text-xs text-gray-500">
+              {databases.reduce((sum, db) => sum + db.motifCount, 0).toLocaleString()} motifs
+              {" "}across {databases.length} collections
+            </span>
+          )}
         </div>
         {selectedDatabases.some((d) =>
           databases.some((db) => db.slug === d.slug)
@@ -309,6 +314,7 @@ function SourceBlock({
               key={db.slug}
               db={db}
               source={source}
+              showDbLabel={databases.length > 1}
               showAll={showAll}
               onToggleShowAll={onToggleShowAll}
               searchText={searchText}
@@ -329,6 +335,7 @@ function SourceBlock({
 interface GroupPickerProps {
   db: DatabaseInfo;
   source: string;
+  showDbLabel: boolean;
   showAll: boolean;
   onToggleShowAll: () => void;
   searchText: string;
@@ -341,6 +348,7 @@ interface GroupPickerProps {
 function GroupPicker({
   db,
   source,
+  showDbLabel,
   showAll,
   onToggleShowAll,
   searchText,
@@ -389,6 +397,14 @@ function GroupPicker({
 
   return (
     <div>
+      {showDbLabel && (
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold text-gray-700">{db.name}</span>
+          <span className="text-xs text-gray-400">
+            {db.motifCount.toLocaleString()} motifs
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-1 gap-2">
         <p className="text-xs text-gray-500 flex-shrink-0">
           Select groups to match against:
