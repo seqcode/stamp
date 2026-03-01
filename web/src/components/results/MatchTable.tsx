@@ -296,14 +296,36 @@ function MatchRow({
               <span className="font-medium text-sm text-gray-900">{match.name}</span>
             )}
             {match.dbId && (
-              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                {match.dbId}
-              </span>
+              match.dbUrl ? (
+                <a
+                  href={match.dbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                >
+                  {match.dbId}
+                </a>
+              ) : (
+                <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                  {match.dbId}
+                </span>
+              )
             )}
             {match.dbSource && (
-              <span className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded">
-                {match.dbSource}{match.dbCollection ? ` ${match.dbCollection}` : ""}
-              </span>
+              match.dbUrl ? (
+                <a
+                  href={match.dbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded hover:bg-blue-600 transition-colors"
+                >
+                  {match.dbSource}{match.dbCollection ? ` ${match.dbCollection}` : ""}
+                </a>
+              ) : (
+                <span className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded">
+                  {match.dbSource}{match.dbCollection ? ` ${match.dbCollection}` : ""}
+                </span>
+              )
             )}
           </div>
 
