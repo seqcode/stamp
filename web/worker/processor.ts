@@ -5,6 +5,7 @@ import { Job as JobModel } from "../src/lib/db/models/Job";
 import { Motif } from "../src/lib/db/models/Motif";
 import { ReferenceDatabase } from "../src/lib/db/models/ReferenceDatabase";
 import { toStampTransfac } from "../src/lib/motif/converter";
+import { trimMotifs } from "../src/lib/motif/trimmer";
 import { selectScoreDistFile } from "../src/lib/stamp/scoreDistSelector";
 import { runStamp } from "../src/lib/stamp/runner";
 import { parseWebmodeOutput } from "../src/lib/stamp/parser";
@@ -28,9 +29,14 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
     // Create job directory
     fs.mkdirSync(jobDir, { recursive: true });
 
+    // Optionally trim low-information edge columns
+    const processedMotifs = params.trimEdges
+      ? trimMotifs(motifs, params.trimThreshold)
+      : motifs;
+
     // Write input motifs to TRANSFAC file
     const inputFile = path.join(jobDir, "input.transfac");
-    const transfacContent = toStampTransfac(motifs);
+    const transfacContent = toStampTransfac(processedMotifs);
     fs.writeFileSync(inputFile, transfacContent, "utf-8");
 
     // Select score distribution file
@@ -91,7 +97,7 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
 
     // Build input motif lookup for enriching match results with query matrices
     const inputMotifMap = new Map<string, number[][]>();
-    for (const m of motifs) {
+    for (const m of processedMotifs) {
       inputMotifMap.set(m.name, m.matrix);
     }
 
@@ -152,8 +158,8 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
       }
     }
 
-    // Store input motifs for display
-    const inputMotifsForResults = motifs.map((m) => ({
+    // Store input motifs for display (use trimmed versions so logos reflect actual input)
+    const inputMotifsForResults = processedMotifs.map((m) => ({
       name: m.name,
       matrix: m.matrix,
     }));

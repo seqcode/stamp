@@ -14,6 +14,8 @@ export const stampParamsSchema = z.object({
   gapExtend: z.number().min(0).max(1000).default(0.5),
   overlapAlign: z.boolean().default(true),
   forwardOnly: z.boolean().default(false),
+  trimEdges: z.boolean().default(false),
+  trimThreshold: z.number().min(0).max(2).default(0.4),
 });
 
 export const databaseSelectionSchema = z.object({

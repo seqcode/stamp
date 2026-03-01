@@ -131,25 +131,57 @@ export function ParameterForm({ value, onChange }: ParameterFormProps) {
             </div>
           )}
 
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                checked={value.overlapAlign}
-                onChange={(e) => update({ overlapAlign: e.target.checked })}
-              />
-              Overlapping alignments only
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                checked={value.forwardOnly}
-                onChange={(e) => update({ forwardOnly: e.target.checked })}
-              />
-              Forward direction only
-            </label>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  checked={value.overlapAlign}
+                  onChange={(e) => update({ overlapAlign: e.target.checked })}
+                />
+                Overlapping alignments only
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  checked={value.forwardOnly}
+                  onChange={(e) => update({ forwardOnly: e.target.checked })}
+                />
+                Forward direction only
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  checked={value.trimEdges}
+                  onChange={(e) => update({ trimEdges: e.target.checked })}
+                />
+                Trim low-information edges
+              </label>
+              {value.trimEdges && (
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-gray-500">IC threshold:</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="2"
+                    className="w-16 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                    value={value.trimThreshold}
+                    onChange={(e) => update({ trimThreshold: Number(e.target.value) })}
+                  />
+                  <span className="text-xs text-gray-400">bits</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 -mt-1 ml-6">
+              Remove edge columns with information content below threshold
+            </p>
           </div>
 
           <button

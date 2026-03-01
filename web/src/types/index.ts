@@ -24,6 +24,8 @@ export interface StampParams {
   gapExtend: number;
   overlapAlign: boolean;
   forwardOnly: boolean;
+  trimEdges: boolean;
+  trimThreshold: number;
 }
 
 export const DEFAULT_PARAMS: StampParams = {
@@ -35,6 +37,8 @@ export const DEFAULT_PARAMS: StampParams = {
   gapExtend: 0.5,
   overlapAlign: true,
   forwardOnly: false,
+  trimEdges: false,
+  trimThreshold: 0.4,
 };
 
 // ── Job Types ──
