@@ -18,6 +18,9 @@ export interface CisbpSyncResult {
 const CISBP_BASE_URL =
   "https://cisbp.ccbr.utoronto.ca/data/3_00/DataFiles/Bulk_downloads/EntireDataset";
 
+const CISBP_URL_PATTERN =
+  "https://cisbp.ccbr.utoronto.ca/TFnewreport.php?searchTF={id}";
+
 /**
  * Sync CIS-BP motifs by downloading directly from the CIS-BP server.
  * Uses streaming ZIP extraction to avoid loading large files into memory as strings.
@@ -208,11 +211,16 @@ async function storeCisbpMotifsFromStream(
       source: "cisbp",
       description: "Catalog of Inferred Sequence Binding Preferences",
       version: "Build 3.00",
-      urlPattern: "https://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
+      urlPattern: CISBP_URL_PATTERN,
       taxonGroups: [],
       isActive: true,
     });
     await refDb.save();
+  } else {
+    await ReferenceDatabase.updateOne(
+      { _id: refDb._id },
+      { version: "Build 3.00", urlPattern: CISBP_URL_PATTERN }
+    );
   }
 
   const dbId = refDb._id as Types.ObjectId;
@@ -258,6 +266,7 @@ async function storeCisbpMotifsFromStream(
       motifDocs.push({
         databaseRef: dbId,
         matrixId: motifId,
+        baseId: info?.tfId || null,
         name: tfName,
         dbSource: "CIS-BP",
         group: species,
@@ -328,11 +337,16 @@ async function storeCisbpMotifs(
       source: "cisbp",
       description: "Catalog of Inferred Sequence Binding Preferences",
       version: "Build 3.00",
-      urlPattern: "https://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
+      urlPattern: CISBP_URL_PATTERN,
       taxonGroups: [],
       isActive: true,
     });
     await refDb.save();
+  } else {
+    await ReferenceDatabase.updateOne(
+      { _id: refDb._id },
+      { version: "Build 3.00", urlPattern: CISBP_URL_PATTERN }
+    );
   }
 
   const dbId = refDb._id as Types.ObjectId;
@@ -358,6 +372,7 @@ async function storeCisbpMotifs(
       motifDocs.push({
         databaseRef: dbId,
         matrixId: motifId,
+        baseId: info?.tfId || null,
         name: tfName,
         dbSource: "CIS-BP",
         group: species,

@@ -33,7 +33,7 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
       source: "jaspar",
       description: `JASPAR ${collection} transcription factor binding profiles`,
       jasparCollection: collection,
-      version: "2024",
+      version: "2026",
       urlPattern: "https://jaspar.elixir.no/matrix/{id}",
       taxonGroups: [],
       isActive: true,
@@ -143,7 +143,7 @@ export async function syncJaspar(options: SyncOptions = {}): Promise<SyncResult>
       lastSyncedAt: new Date(),
       motifCount,
       taxonGroups: storedTaxonGroups,
-      version: "2024",
+      version: "2026",
       urlPattern: "https://jaspar.elixir.no/matrix/{id}",
     }
   );

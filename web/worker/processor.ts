@@ -44,9 +44,10 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
 
     // Prepare match database file if matching is enabled
     let matchFile: string | undefined;
+    let baseIdMap = new Map<string, string>();
     if (matching.enabled && matching.databases && matching.databases.length > 0) {
       matchFile = path.join(jobDir, "reference.transfac");
-      await generateReferenceDb(matchFile, matching.databases);
+      baseIdMap = await generateReferenceDb(matchFile, matching.databases);
     } else if (matching.enabled && matching.customDbFileKey) {
       matchFile = matching.customDbFileKey;
     }
@@ -138,7 +139,9 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
             const sourceKey = dbSource.toUpperCase();
             const pattern = urlPatternMap.get(sourceKey);
             if (pattern) {
-              entry.dbUrl = pattern.replace("{id}", matrixId);
+              // For CIS-BP, use the TF identifier (baseId) for per-entry URLs
+              const urlId = baseIdMap.get(matrixId) || matrixId;
+              entry.dbUrl = pattern.replace("{id}", urlId);
             }
             const homeUrl = dbHomeUrlMap.get(sourceKey);
             if (homeUrl) {
@@ -218,9 +221,9 @@ export async function processStampJob(job: BullJob<StampJobData>): Promise<void>
 async function generateReferenceDb(
   outputPath: string,
   databases: DatabaseSelection[]
-): Promise<void> {
+): Promise<Map<string, string>> {
   // Build query: for each database selection, find motifs matching the slug and groups
-  const allMotifs: Array<{ dbSource: string; matrixId: string; name: string; pfm: { A: number[]; C: number[]; G: number[]; T: number[] } }> = [];
+  const allMotifs: Array<{ dbSource: string; matrixId: string; baseId?: string; name: string; pfm: { A: number[]; C: number[]; G: number[]; T: number[] } }> = [];
 
   for (const dbSel of databases) {
     const refDb = await ReferenceDatabase.findOne({ slug: dbSel.slug }).lean() as { _id: unknown; source?: string } | null;
@@ -237,6 +240,7 @@ async function generateReferenceDb(
       allMotifs.push({
         dbSource: (m as Record<string, unknown>).dbSource as string || dbSourceLabel,
         matrixId: m.matrixId,
+        baseId: m.baseId || undefined,
         name: m.name,
         pfm: m.pfm,
       });
@@ -251,6 +255,10 @@ async function generateReferenceDb(
     );
   }
 
+  // Build a mapping from matrixId → baseId (e.g. CIS-BP motifId → TF_ID)
+  // so the processor can construct per-entry URLs using the TF identifier
+  const baseIdMap = new Map<string, string>();
+
   const lines: string[] = [];
   for (const motif of allMotifs) {
     // Three-part DE line: "JASPAR::MA0139.1::CTCF" — frontend parses this to extract DB info.
@@ -263,9 +271,15 @@ async function generateReferenceDb(
       );
     }
     lines.push("XX");
+
+    if (motif.baseId) {
+      baseIdMap.set(motif.matrixId, motif.baseId);
+    }
   }
 
   fs.writeFileSync(outputPath, lines.join("\n") + "\n", "utf-8");
+
+  return baseIdMap;
 }
 
 async function sendEmailNotification(

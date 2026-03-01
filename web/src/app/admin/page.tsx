@@ -42,6 +42,10 @@ export default function AdminPage() {
   const [hocomocoResult, setHocomocoResult] = useState<string | null>(null);
   const [hocomocoCollection, setHocomocoCollection] = useState<string>("H14CORE");
 
+  // Vierstra state
+  const [vierstraSyncing, setVierstraSyncing] = useState(false);
+  const [vierstraResult, setVierstraResult] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     const [jobsRes, dbsRes] = await Promise.all([
       fetch("/api/admin/jobs"),
@@ -113,6 +117,30 @@ export default function AdminPage() {
       setHocomocoResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setHocomocoSyncing(false);
+    }
+  };
+
+  const handleVierstraSync = async () => {
+    setVierstraSyncing(true);
+    setVierstraResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-vierstra", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setVierstraResult(
+          `Sync complete: ${data.result.totalStored} archetypes stored from ${data.result.families.length} families, ${data.result.errors.length} errors`
+        );
+        fetchData();
+      } else {
+        setVierstraResult(`Sync failed: ${data.error}`);
+      }
+    } catch (err) {
+      setVierstraResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setVierstraSyncing(false);
     }
   };
 
@@ -361,6 +389,33 @@ export default function AdminPage() {
           </div>
           {hocomocoResult && (
             <p className="text-sm text-gray-600 mt-2">{hocomocoResult}</p>
+          )}
+        </div>
+
+        {/* Vierstra Sync Controls */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">
+            Sync Vierstra Motif Archetypes
+          </h4>
+          <p className="text-xs text-gray-500 mb-3">
+            Downloads consensus archetype models from the{" "}
+            <a
+              href="https://resources.altius.org/~jvierstra/projects/motif-clustering-v2.0beta/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600"
+            >
+              Vierstra non-redundant TF motif clustering v2.0
+            </a>
+            . Motifs are grouped by TF family.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleVierstraSync} disabled={vierstraSyncing}>
+              {vierstraSyncing ? "Syncing..." : "Sync Vierstra Archetypes"}
+            </Button>
+          </div>
+          {vierstraResult && (
+            <p className="text-sm text-gray-600 mt-2">{vierstraResult}</p>
           )}
         </div>
       </Card>
