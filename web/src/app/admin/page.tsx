@@ -37,6 +37,11 @@ export default function AdminPage() {
   const [cisbpSyncing, setCisbpSyncing] = useState(false);
   const [cisbpResult, setCisbpResult] = useState<string | null>(null);
 
+  // HOCOMOCO state
+  const [hocomocoSyncing, setHocomocoSyncing] = useState(false);
+  const [hocomocoResult, setHocomocoResult] = useState<string | null>(null);
+  const [hocomocoCollection, setHocomocoCollection] = useState<string>("H14CORE");
+
   const fetchData = useCallback(async () => {
     const [jobsRes, dbsRes] = await Promise.all([
       fetch("/api/admin/jobs"),
@@ -83,6 +88,31 @@ export default function AdminPage() {
       setSyncResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleHocomocoSync = async () => {
+    setHocomocoSyncing(true);
+    setHocomocoResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-hocomoco", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collection: hocomocoCollection }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHocomocoResult(
+          `Sync complete: ${data.result.totalStored} motifs stored from ${data.result.groups.length} groups, ${data.result.errors.length} errors`
+        );
+        fetchData();
+      } else {
+        setHocomocoResult(`Sync failed: ${data.error}`);
+      }
+    } catch (err) {
+      setHocomocoResult(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setHocomocoSyncing(false);
     }
   };
 
@@ -289,6 +319,48 @@ export default function AdminPage() {
           </div>
           {cisbpResult && (
             <p className="text-sm text-gray-600 mt-2">{cisbpResult}</p>
+          )}
+        </div>
+
+        {/* HOCOMOCO Sync Controls */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">
+            Sync HOCOMOCO Database
+          </h4>
+          <p className="text-xs text-gray-500 mb-3">
+            Downloads motif data from{" "}
+            <a
+              href="https://hocomoco14.autosome.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600"
+            >
+              HOCOMOCO v14
+            </a>
+            . Select a collection to sync:
+          </p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {(["H14CORE", "H14CORE-CLUSTERED"] as const).map((col) => (
+              <button
+                key={col}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  hocomocoCollection === col
+                    ? "bg-brand-100 text-brand-700 border border-brand-300"
+                    : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                }`}
+                onClick={() => setHocomocoCollection(col)}
+              >
+                {col === "H14CORE" ? "CORE (full, ~1595 motifs)" : "CLUSTERED (non-redundant, ~523 motifs)"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleHocomocoSync} disabled={hocomocoSyncing}>
+              {hocomocoSyncing ? "Syncing..." : "Sync HOCOMOCO"}
+            </Button>
+          </div>
+          {hocomocoResult && (
+            <p className="text-sm text-gray-600 mt-2">{hocomocoResult}</p>
           )}
         </div>
       </Card>

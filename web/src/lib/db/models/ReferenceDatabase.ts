@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IReferenceDatabase extends Document {
   name: string;
   slug: string;
-  source: "jaspar" | "cisbp" | "custom";
+  source: "jaspar" | "cisbp" | "hocomoco" | "custom";
   description: string;
   jasparCollection: string | null;
   version: string | null;
@@ -21,7 +21,7 @@ const ReferenceDatabaseSchema = new Schema<IReferenceDatabase>(
   {
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true, index: true },
-    source: { type: String, required: true, enum: ["jaspar", "cisbp", "custom"] },
+    source: { type: String, required: true, enum: ["jaspar", "cisbp", "hocomoco", "custom"] },
     description: { type: String, default: "" },
     jasparCollection: { type: String, default: null },
     version: { type: String, default: null },

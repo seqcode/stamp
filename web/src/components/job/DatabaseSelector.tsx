@@ -55,9 +55,10 @@ export function DatabaseSelector({ value, onChange }: DatabaseSelectorProps) {
   );
 
   // Source display names and order
-  const sourceOrder = ["jaspar", "cisbp", "custom"];
+  const sourceOrder = ["jaspar", "hocomoco", "cisbp", "custom"];
   const sourceLabels: Record<string, string> = {
     jaspar: "JASPAR",
+    hocomoco: "HOCOMOCO",
     cisbp: "CIS-BP",
     custom: "Custom",
   };
