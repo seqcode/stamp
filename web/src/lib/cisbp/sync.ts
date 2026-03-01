@@ -208,7 +208,7 @@ async function storeCisbpMotifsFromStream(
       source: "cisbp",
       description: "Catalog of Inferred Sequence Binding Preferences",
       version: "Build 3.00",
-      urlPattern: "http://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
+      urlPattern: "https://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
       taxonGroups: [],
       isActive: true,
     });
@@ -328,7 +328,7 @@ async function storeCisbpMotifs(
       source: "cisbp",
       description: "Catalog of Inferred Sequence Binding Preferences",
       version: "Build 3.00",
-      urlPattern: "http://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
+      urlPattern: "https://cisbp.ccbr.utoronto.ca/TFreport.php?searchTF={id}",
       taxonGroups: [],
       isActive: true,
     });
