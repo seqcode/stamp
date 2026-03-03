@@ -101,6 +101,7 @@ public:
 	Motif** profileAlignment;
 	char** alignedNames;
 	int* alignedIDs;
+	bool* alignedRC;  // Tracks whether each motif was reverse-complemented relative to input
 
 	//Constructor
 	MultiAlignRec(int nA=2, int aL=0);
@@ -118,6 +119,7 @@ public:
 			delete [] alignedNames[k];
 		delete [] alignedNames;
 		delete [] alignedIDs;
+		delete [] alignedRC;
 	}
 };
 

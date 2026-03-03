@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 //
-// STAMP version 1.3
+// STAMP version 2.0
 //
 // Written By: Shaun Mahony
 // Bug fixes by: Gert Hulselmans
@@ -61,6 +61,7 @@ int main (int argc, char *argv[])
 	bool ma_off=false;
 	bool tree_loocv=false;//true;
 	bool silent=false, htmlOutput=false; bool simMatching=false;
+	bool webMode=false;
 	bool weighting_on=false;
 	int matchTopX = TOP_MATCH;
 
@@ -90,10 +91,12 @@ int main (int argc, char *argv[])
 			silent=true;
 		if(strcmp(argv[i], "-html")==0)
 			htmlOutput=true;
+		if(strcmp(argv[i], "-webmode")==0)
+			webMode=true;
 	}
 
 	//Welcome message
-	if(!silent && !htmlOutput){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Biochemistry & Molecular Biology\n\tPenn State University\n\tVersion 1.3 (September 2016)\n\n");}
+	if(!silent && !htmlOutput && !webMode){printf("\n\tSTAMP\n\tSimilarity, Tree-building, & Alignment of Motifs and Profiles\n\n\tShaun Mahony\n\tDepartment of Biochemistry & Molecular Biology\n\tPenn State University\n\tVersion 2.0\n\n");}
 
 	if(argc ==1) //First and Foremost, the help option
 	{	DisplayHelp();
@@ -149,28 +152,28 @@ int main (int argc, char *argv[])
 			{	gapExtend=strtod(argv[i+1], NULL);}
 		}
 		if((strcmp(argv[i], "-overlapalign")) ==0){ //Only complete overlapping alignments
-			overlapAlign = true; if(!silent && !htmlOutput){printf("Overlapping alignments only\n");}
+			overlapAlign = true; if(!silent && !htmlOutput && !webMode){printf("Overlapping alignments only\n");}
 		}if((strcmp(argv[i], "-nooverlapalign")) ==0){ //All overlapping alignments
 			overlapAlign = false;
 		}
 		if((strcmp(argv[i], "-extendoverlap")) ==0){
-			extendOverlap=true; if(!silent && !htmlOutput){printf("Extending the overlapping alignments\n");}
+			extendOverlap=true; if(!silent && !htmlOutput && !webMode){printf("Extending the overlapping alignments\n");}
 		}
 		if((strcmp(argv[i], "-forwardonly")) ==0){ //Consider forward alignments only
 			forwardAlignOnly = true;
-			if(!silent && !htmlOutput){printf("Considering forward direction alignments only\n");}
+			if(!silent && !htmlOutput && !webMode){printf("Considering forward direction alignments only\n");}
 		}
 		if((strcmp(argv[i], "-printpairwise")) ==0){
-			pairwiseOnly=true; if(!silent && !htmlOutput){printf("Printing pairwise scores only\n");}
+			pairwiseOnly=true; if(!silent && !htmlOutput && !webMode){printf("Printing pairwise scores only\n");}
 		}
 		if((strcmp(argv[i], "-FBP")) ==0){
-			FBP_on=true; if(!silent && !htmlOutput){printf("Using FBP profiles\n");}
+			FBP_on=true; if(!silent && !htmlOutput && !webMode){printf("Using FBP profiles\n");}
 		}
 		if((strcmp(argv[i], "-useweighting")) ==0){
-			weighting_on=true; if(!silent && !htmlOutput){printf("Using weighting in FBP construction\n");}
+			weighting_on=true; if(!silent && !htmlOutput && !webMode){printf("Using weighting in FBP construction\n");}
 		}
 		if((strcmp(argv[i], "-prealigned")) ==0){
-			preAlign=true; if(!silent && !htmlOutput){printf("Profiles are pre-aligned\n");}
+			preAlign=true; if(!silent && !htmlOutput && !webMode){printf("Profiles are pre-aligned\n");}
 		}
 
 		//Input TF dataset name
@@ -256,11 +259,11 @@ int main (int argc, char *argv[])
 		{	if(argv[i+1]!=NULL)
 			{
 			if((strcmp(argv[i+1], "PPA"))==0 || (strcmp(argv[i+1], "ppa"))==0){
-				MA = new ProgressiveProfileAlignment(outFileName, htmlOutput);
+				MA = new ProgressiveProfileAlignment(webMode ? (char*)"" : outFileName, htmlOutput);
 				maChosen=true;
 			}
 			if((strcmp(argv[i+1], "IR"))==0 || (strcmp(argv[i+1], "ir"))==0){
-				MA = new IterativeRefinementAlignment(outFileName, htmlOutput);
+				MA = new IterativeRefinementAlignment(webMode ? (char*)"" : outFileName, htmlOutput);
 				maChosen=true;
 			}
 			if((strcmp(argv[i+1], "NONE"))==0 || (strcmp(argv[i+1], "none"))==0){
@@ -273,7 +276,7 @@ int main (int argc, char *argv[])
 	{	ALIGN = new SmithWatermanAffine(CC, gapOpen, gapExtend, overlapAlign, extendOverlap, forwardAlignOnly);
 	}
 	if(!maChosen)
-		MA = new ProgressiveProfileAlignment(outFileName, htmlOutput);
+		MA = new ProgressiveProfileAlignment(webMode ? (char*)"" : outFileName, htmlOutput);
 	//Third pass
 	//Choose a tree-construction method
 	for(i=1; i<argc; i++)
@@ -287,7 +290,7 @@ int main (int argc, char *argv[])
 				T = new SOTA(ALIGN, MA); neuralTree=true;
 			}
 			if((strcmp(argv[i+1], "NJ"))==0 || (strcmp(argv[i+1], "nj"))==0){
-				T = new Neighbourjoin(ALIGN); printf("Using Neighbour-joining... ensure that the distance metric is additive\n");
+				T = new Neighbourjoin(ALIGN); if(!webMode) printf("Using Neighbour-joining... ensure that the distance metric is additive\n");
 			}
 			if((strcmp(argv[i+1], "TDHC"))==0 || (strcmp(argv[i+1], "tdhc"))==0){
 				T = new TopDownHClust(ALIGN, MA); neuralTree=true;
@@ -299,6 +302,7 @@ int main (int argc, char *argv[])
 	if(!treeChosen)
 		T = new UPGMA(ALIGN);
 	T->BeQuiet(silent);
+	MA->SetWebMode(webMode);
 
 ////////////////////////////////////////////////////////////////////////////////////
 //////// Main Program /////////////////////////////////////////////////////////////
@@ -308,7 +312,7 @@ int main (int argc, char *argv[])
 	if(inputProvided){
 		//Read in the matrices
 		Plat->ReadTransfacFile(inputTFs, famNames,true, weighting_on);
-		if(!silent && !htmlOutput){
+		if(!silent && !htmlOutput && !webMode){
 			printf("MatCount: %d\n", Plat->GetMatCount());
 			if(ungapped)
 				printf("Ungapped Alignment\n");
@@ -316,7 +320,7 @@ int main (int argc, char *argv[])
 				printf("Gap open = %.3lf, gap extend = %.3lf\n", gapOpen, gapExtend);
 		}
 	}else{
-		printf("No input motifs provided!\n\n");
+		fprintf(webMode ? stderr : stdout, "No input motifs provided!\n\n");
 	}
 	if(genRandMotifs){
 		//Generate some random matrices
@@ -327,7 +331,7 @@ int main (int argc, char *argv[])
 		//Find rand dist
 		Plat->GetRandDistrib(scoresOut, ALIGN);
 	}else if(!scoresProvided){
-		printf("No score distribution file provided!\n\n");
+		fprintf(webMode ? stderr : stdout, "No score distribution file provided!\n\n");
 	}
 	if(testing){
 		PlatformTesting* PT = new PlatformTesting(CC);
@@ -346,7 +350,7 @@ int main (int argc, char *argv[])
 	if(scoresProvided || preAlign){
 
 		Plat->ReadScoreDists(scoreDist);
-		if(!silent && !htmlOutput){printf("Scores read\n");}
+		if(!silent && !htmlOutput && !webMode){printf("Scores read\n");}
 		if(Plat->GetMatCount()>1){
 			if(preAlign){
 				//No alignments or trees built here
@@ -354,30 +358,56 @@ int main (int argc, char *argv[])
 			}else{
 				//Multiple alignment procedure
 				Plat->PreAlign(ALIGN);
-				if(pairwiseOnly){
+				if(pairwiseOnly && !webMode){
 					if(!silent && !htmlOutput){printf("\nPairwise alignment scores:\n");}
-					Plat->PrintPairwise();
+					Plat->PrintPairwise(false);
 				}if(!ma_off){
 					MA->ImportBasics(Plat, ALIGN);
-					if(!silent && !htmlOutput){printf("Alignments Finished\n");}
+					if(!silent && !htmlOutput && !webMode){printf("Alignments Finished\n");}
 					if(!testingAcc){
 						if(tree_loocv && testingTree){
 							T->LOOCVBuildTree(Plat, testingTree);
 						}else{
-							if(testingTree && !silent && !htmlOutput){printf("Calinski & Harabasz:\n\tNumClust\tC&H_Metric\n");}
+							if(testingTree && !silent && !htmlOutput && !webMode){printf("Calinski & Harabasz:\n\tNumClust\tC&H_Metric\n");}
 							T->BuildTree(Plat, testingTree);
-							if(!silent && treeClusts){printf("The Calinski & Harabasz statistic suggests %.0lf clusters in the input motifs\n", T->GetNodesMinCH());}
-							if(printTreeClusts){
+							if(!silent && treeClusts && !webMode){printf("The Calinski & Harabasz statistic suggests %.0lf clusters in the input motifs\n", T->GetNodesMinCH());}
+							if(printTreeClusts && !webMode){
 								T->PrintLevel(outFileName, int(T->GetNodesMinCH()));
 							}
 						}
-						T->PrintTree(outFileName);
+						//Write tree file in default mode only
+						if(!webMode){
+							T->PrintTree(outFileName);
+						}
 
-						if(!silent && !htmlOutput){printf("Tree Built\n");}
+						if(!silent && !htmlOutput && !webMode){printf("Tree Built\n");}
 
-						if(!silent){
-							if(!silent && !htmlOutput){printf("Multiple Alignment:\n");}
+						//Build multiple alignment (always in webmode, gated by !silent in default)
+						if(!silent || webMode){
+							if(!silent && !htmlOutput && !webMode){printf("Multiple Alignment:\n");}
 							pssmAlignment = MA->BuildAlignment(Plat, ALIGN, T);
+						}
+
+						//Enhanced output sections
+						if(webMode){
+							//Pairwise scores to stdout (always in webmode)
+							Plat->PrintPairwise(true);
+							//Consensus alignment is already printed by BuildAlignment via webMode on MA
+							//Enhanced alignment with strand/PFM data
+							if(pssmAlignment != NULL){
+								MA->PrintEnhancedAlignment(pssmAlignment);
+								//FBP profile to stdout
+								Motif* fbp = MA->Alignment2Profile(pssmAlignment, "FBP");
+								MA->PrintFBPToStdout(fbp);
+								//Internal profiles
+								T->PrintInternalProfiles(stdout);
+								//Labeled tree
+								T->PrintEnhancedTree(stdout);
+							}
+						} else if(pssmAlignment != NULL && strlen(outFileName) > 0){
+							//Default mode: write enhanced files alongside traditional ones
+							MA->WriteEnhancedAlignment(outFileName, pssmAlignment);
+							T->WriteInternalProfiles(outFileName);
 						}
 					}
 				}
@@ -394,7 +424,7 @@ int main (int argc, char *argv[])
 		//Similarity match against the database
 		if(simMatching){
 			Plat->ReadTransfacFile(matchTFs, famNames, false, false);
-			Plat->SimilarityMatching(ALIGN, outFileName, famNames, matchTopX);
+			Plat->SimilarityMatching(ALIGN, outFileName, famNames, matchTopX, webMode);
 		}
 	}
 
@@ -443,6 +473,9 @@ void DisplayHelp()
 	printf("\n\t*** Mutual Information ***\n");
 	printf("\t-prot [protein file]\n\t\tProvide a file of protein alignments (Pfam format)\n\t\tto begin mutual information scan.\n");
 	printf("\t-prealigned\n\t\tSet this flag if the motifs are prealigned.\n\t\tAlignment is skipped and mutual information scan begins\n");
+	printf("\n\t*** Output Options ***\n");
+	printf("\t-out [prefix]\n\t\tOutput file prefix for tree, match, and alignment files\n");
+	printf("\t-webmode\n\t\tStructured output mode: all results to stdout in delimited sections,\n\t\tno files written. Sections use >>STAMP_ prefixed delimiters.\n");
 	printf("\n\t*** Support Options ***\n");
 	printf("\t-genrand [output file]\n\t\tGenerate 10000 random motifs and store them in the output file\n");
 	printf("\t-genscores [output file]\n\t\tGenerate expected scores based on simulated motifs and store them in the output file\n");

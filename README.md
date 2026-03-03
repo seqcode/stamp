@@ -1,8 +1,8 @@
-# STAMP v.1.3.
+# STAMP v2.0
 
-[STAMP](http://www.benoslab.pitt.edu/stamp/) is a tool for characterizing similarities between transcription factor binding motifs. 
+[STAMP](https://github.com/seqcode/stamp) is a tool for characterizing similarities between transcription factor binding motifs. STAMP includes both a command-line tool for motif comparison and a web platform for interactive analysis, visualization, and database matching.
 
-You can also use the formatMotifs.pl script to convert the outputs from various motif-finders into the format used by STAMP. 
+You can also use the formatMotifs.pl script to convert the outputs from various motif-finders into the format used by STAMP.
 
 
 ## Building STAMP:
@@ -119,7 +119,92 @@ the **formatMotifs.pl** script.
 [List of input formats](http://www.benoslab.pitt.edu/stamp/help.html#input):
 
 
+## Web Server
+
+STAMP v2.0 includes a web platform (in the `web/` directory) that wraps the STAMP command-line tool in an interactive application. Users can submit motif analysis jobs, visualize results, and match motifs against reference databases — all through a browser.
+
+### Quick Start (Docker)
+
+The easiest way to run the web platform is with Docker Compose:
+
+```bash
+cd web/docker
+docker compose up
+```
+
+This starts the web server (port 3000), a background worker, MongoDB, and Redis. Copy `web/.env.example` to `web/.env.local` and configure as needed before starting.
+
+### Quick Start (Development)
+
+Prerequisites: Node.js >= 20, MongoDB, Redis, and the compiled STAMP binary.
+
+```bash
+cd web
+cp .env.example .env.local   # edit with your local paths
+npm install
+npm run dev                   # Next.js dev server on port 3000
+npm run worker:dev            # background job processor (separate terminal)
+```
+
+### Architecture Overview
+
+The web platform is built with:
+
+ * **Next.js 14** (App Router) — serves both the React frontend and REST API routes
+ * **MongoDB** (via Mongoose) — stores jobs, results, and reference database metadata
+ * **Redis + BullMQ** — asynchronous job queue for running STAMP analyses
+ * **Worker process** — picks jobs from the queue, invokes the STAMP binary, parses output, and stores results
+
+**Motif input** supports six formats: TRANSFAC, MEME, JASPAR, TF-MoDISco, consensus, and aligned FASTA. Formats are auto-detected on upload.
+
+**Database matching** compares input motifs against reference databases synced from JASPAR, CIS-BP, HOCOMOCO v14, and Vierstra motif archetypes. An admin dashboard manages database synchronization.
+
+**Results** include interactive D3-based sequence logos, a phylogenetic tree viewer, pairwise and multiple alignment viewers, and database match tables. Results can be downloaded as a self-contained HTML report or a ZIP archive.
+
+### Directory Structure
+
+```
+web/
+├── src/
+│   ├── app/              # Next.js pages and API routes
+│   │   ├── api/          #   REST endpoints (jobs, admin, databases, SSE)
+│   │   ├── admin/        #   Admin dashboard
+│   │   └── jobs/[jobId]/ #   Results page
+│   ├── components/       # React components
+│   │   ├── motif/        #   Sequence logos, motif input
+│   │   ├── results/      #   Tree, alignment, match viewers
+│   │   └── job/          #   Parameter form, database selector
+│   ├── lib/              # Server-side logic
+│   │   ├── motif/        #   Format parsers and converters
+│   │   ├── stamp/        #   STAMP binary runner and output parser
+│   │   ├── db/           #   Mongoose models (Job, ReferenceDatabase)
+│   │   ├── queue/        #   BullMQ queue setup
+│   │   ├── auth/         #   Session management, rate limiting
+│   │   ├── export/       #   HTML report and logo rendering
+│   │   └── jaspar/       #   Reference database sync clients
+│   │       cisbp/
+│   │       hocomoco/
+│   │       vierstra/
+│   └── types/            # TypeScript type definitions
+├── worker/               # Background job processor
+└── docker/               # Dockerfile and docker-compose configs
+```
+
+
 ## Version history:
+
+ * **v2.0:** 2026-03-03:
+    * Added a web platform for interactive motif analysis (`web/` directory).
+    * Multi-format motif input with auto-detection (TRANSFAC, MEME, JASPAR, TF-MoDISco, consensus, aligned FASTA).
+    * Interactive D3-based sequence logo visualization with export options.
+    * Asynchronous job processing via BullMQ/Redis queue with real-time progress updates (SSE).
+    * Database matching against JASPAR, CIS-BP, HOCOMOCO v14, and Vierstra motif archetypes.
+    * Admin dashboard for syncing and managing reference databases.
+    * Results page with phylogenetic tree viewer, pairwise/multiple alignment viewers, and match tables.
+    * Downloadable self-contained HTML report and ZIP archive of results.
+    * Optional email notifications on job completion.
+    * Docker Compose deployment with multi-stage builds.
+    * Security hardening: Redis-backed sessions, rate limiting, CSRF protection, XSS prevention.
 
  * **v.1.3:** 2016-09-23:
     * Make parsing of STAMP specific TRANSFAC file more robust.
@@ -160,9 +245,7 @@ the **formatMotifs.pl** script.
 
 ## Contact details:
 
- * Personal website: http://mahonylab.org/
- * STAMP website: http://www.benoslab.pitt.edu/stamp/
- * Download STAMP:
-     * https://github.com/seqcode/stamp
-     * http://www.csb.pitt.edu/Faculty/benos/?page_id=51
+ * Mahony Lab: https://mahonylab.org/
+ * GitHub: https://github.com/seqcode/stamp
+ * Legacy STAMP website: http://www.benoslab.pitt.edu/stamp/
 

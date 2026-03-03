@@ -561,9 +561,11 @@ void PlatformSupport::PreAlign(Alignment* A_man)
 }
 
 //Print out the pairwise alignments
-void PlatformSupport::PrintPairwise()
+void PlatformSupport::PrintPairwise(bool webMode)
 {
 	int i, j;
+	if(webMode) printf(">>STAMP_PAIRWISE_START\n");
+
 	for(j=0; j<matCount; j++){
 		printf("\t%s",inputMotifs[j]->GetName());
 	}printf("\n\n");
@@ -579,13 +581,17 @@ void PlatformSupport::PrintPairwise()
 		}
 		printf("\n\n");
 	}
+
+	if(webMode) printf(">>STAMP_PAIRWISE_END\n");
 }
 
 //Find the best matching motifs in the match set and print the pairs to a file
-void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bool famNames, const int matchTopX)
+void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bool famNames, const int matchTopX, bool webMode)
 {
 	double* topScores;
 	int* topIndices;
+	bool* topForward1;  // Track strand for each top match
+	bool* topForward2;
 	bool printAll=false;
 	int i, j, x, y;
 	double currScore, currPVal;
@@ -593,12 +599,19 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 	int i1, i2, aL;
 	bool forward1, forward2;
 	char currName[STR_LEN];
-	char outPairsName[STR_LEN];
-	char outMatchedName[STR_LEN];
-	sprintf(outPairsName, "%s_match_pairs.txt", outFileName);
-	sprintf(outMatchedName, "%s_matched.transfac", outFileName);
-	FILE* outPairs = fopen(outPairsName, "w");
-	FILE* outMatched = fopen(outMatchedName, "w");
+	FILE* outPairs = NULL;
+	FILE* outMatched = NULL;
+
+	// Only open files in non-webMode
+	if(!webMode){
+		char outPairsName[STR_LEN];
+		char outMatchedName[STR_LEN];
+		sprintf(outPairsName, "%s_match_pairs.txt", outFileName);
+		sprintf(outMatchedName, "%s_matched.transfac", outFileName);
+		outPairs = fopen(outPairsName, "w");
+		outMatched = fopen(outMatchedName, "w");
+	}
+
 	char*** topAligns;
 	int topX = matchTopX;
 	if(topX>GetMatchDBSize()){
@@ -607,36 +620,39 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 	bool inserted=false;
 	topScores = new double[topX];
 	topIndices = new int[topX];
+	topForward1 = new bool[topX];
+	topForward2 = new bool[topX];
+	int* topQueryAlignStart = new int[topX];
+	int* topQueryAlignEnd = new int[topX];
+	int* topMatchAlignStart = new int[topX];
+	int* topMatchAlignEnd = new int[topX];
 	topAligns = new char**[topX];
 	for(x=0; x<topX; x++){
 		topScores[x]=0; topIndices[x]=0;
+		topForward1[x]=true; topForward2[x]=true;
+		topQueryAlignStart[x]=0; topQueryAlignEnd[x]=0;
+		topMatchAlignStart[x]=0; topMatchAlignEnd[x]=0;
 		topAligns[x]=new char*[2];
 		topAligns[x][0]=new char[STR_LEN];
 		topAligns[x][1]=new char[STR_LEN];
 		strcpy(topAligns[x][0], "");strcpy(topAligns[x][1], "");
 	}
 
-	if(printAll){
-		printf("\t");
-		for(j=0; j<GetMatchDBSize(); j++){
-			printf("%s\t", matchMotifs[j]->GetName());
-		}
-		printf("\n");
-	}
-	for(i=0; i<GetMatCount(); i++){
+	if(webMode) printf(">>STAMP_MATCH_DETAILS_START\n");
 
-		if(printAll)
-			printf("%s\t", inputMotifs[i]->GetName());
+	for(i=0; i<GetMatCount(); i++){
 
 		for(x=0; x<topX; x++){
 			topScores[x]=0; topIndices[x]=0;
+			topForward1[x]=true; topForward2[x]=true;
+			topQueryAlignStart[x]=0; topQueryAlignEnd[x]=0;
+			topMatchAlignStart[x]=0; topMatchAlignEnd[x]=0;
 			strcpy(topAligns[x][0], "");strcpy(topAligns[x][1], "");
 		}
 
 		for(j=0; j<GetMatchDBSize(); j++){
 			currScore = A_man->AlignMotifs2D(inputMotifs[i], matchMotifs[j], i1, i2, aL, forward1, forward2);
 			currPVal = Score2PVal(inputMotifs[i]->len, matchMotifs[j]->len, currScore);
-			if(printAll){printf("%lf\t", currPVal);/*printf("%s\t%lf\n", matchMotifs[j]->GetName(),currPVal);*/}
 
 			//Check the current score against the topScores
 			inserted=false;
@@ -646,11 +662,19 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 					for(y=topX-1; y>x; y--){
 						topScores[y]=topScores[y-1];
 						topIndices[y]=topIndices[y-1];
+						topForward1[y]=topForward1[y-1];
+						topForward2[y]=topForward2[y-1];
+						topQueryAlignStart[y]=topQueryAlignStart[y-1];
+						topQueryAlignEnd[y]=topQueryAlignEnd[y-1];
+						topMatchAlignStart[y]=topMatchAlignStart[y-1];
+						topMatchAlignEnd[y]=topMatchAlignEnd[y-1];
 						strcpy(topAligns[y][0],topAligns[y-1][0]);
 						strcpy(topAligns[y][1],topAligns[y-1][1]);
 					}
 					topScores[x] = currPVal;
 					topIndices[x]=j;
+					topForward1[x]=forward1;
+					topForward2[x]=forward2;
 					if(forward1){
 						one = inputMotifs[i];
 					}else{
@@ -664,35 +688,93 @@ void PlatformSupport::SimilarityMatching(Alignment* A_man, char* outFileName, bo
 						matchMotifs[j]->RevCompMotif(two);
 					}
 					A_man->CopyAlignmentConsensus(one, two,topAligns[x][0], topAligns[x][1]);
+					// Compute alignment region bounds from alignSection
+					{
+						int qS = aL > 0 ? one->GetLen() : 0;
+						int qE = -1, mS = aL > 0 ? two->GetLen() : 0, mE = -1;
+						for(int z=0; z<aL; z++){
+							if(A_man->alignSection[0][z] >= 0){
+								if(A_man->alignSection[0][z] < qS) qS = A_man->alignSection[0][z];
+								if(A_man->alignSection[0][z] > qE) qE = A_man->alignSection[0][z];
+							}
+							if(A_man->alignSection[1][z] >= 0){
+								if(A_man->alignSection[1][z] < mS) mS = A_man->alignSection[1][z];
+								if(A_man->alignSection[1][z] > mE) mE = A_man->alignSection[1][z];
+							}
+						}
+						topQueryAlignStart[x] = qE >= 0 ? qS : 0;
+						topQueryAlignEnd[x] = qE >= 0 ? qE : 0;
+						topMatchAlignStart[x] = mE >= 0 ? mS : 0;
+						topMatchAlignEnd[x] = mE >= 0 ? mE : 0;
+					}
 					if(!forward1){
 						delete one;
 					}if(!forward2){
 						delete two;
 					}
 					inserted=true;
-
 				}
 			}
 		}
-		if(printAll){printf("\n");}
 
-		fprintf(outPairs, ">\t%s\n", inputMotifs[i]->GetName());
-		for(x=0; x<topX; x++){
-			if(famNames){
-				sprintf(currName, "%s_%s", matchMotifs[topIndices[x]]->famName, matchMotifs[topIndices[x]]->GetName());
-			}else{
-				sprintf(currName, "%s", matchMotifs[topIndices[x]]->GetName());
+		if(webMode){
+			// Webmode: emit structured match details to stdout
+			printf(">>QUERY\t%s\n", inputMotifs[i]->GetName());
+			for(x=0; x<topX; x++){
+				if(famNames){
+					sprintf(currName, "%s_%s", matchMotifs[topIndices[x]]->famName, matchMotifs[topIndices[x]]->GetName());
+				}else{
+					sprintf(currName, "%s", matchMotifs[topIndices[x]]->GetName());
+				}
+				double Eval = 1-topScores[x];
+				printf(">>MATCH\t%s\t%.4e\t%c\t%c\n", currName, Eval,
+					topForward1[x] ? '+' : '-', topForward2[x] ? '+' : '-');
+				printf(">>MATCH_REGION\t%d\t%d\t%d\t%d\t%d\t%d\n",
+					inputMotifs[i]->len, topQueryAlignStart[x], topQueryAlignEnd[x],
+					matchMotifs[topIndices[x]]->len, topMatchAlignStart[x], topMatchAlignEnd[x]);
+				printf(">>QUERY_CONSENSUS\t%s\n", topAligns[x][0]);
+				printf(">>MATCH_CONSENSUS\t%s\n", topAligns[x][1]);
+				// Print matched motif PFM
+				printf(">>MATCH_PFM_START\t%d\n", matchMotifs[topIndices[x]]->len);
+				for(int p=0; p<matchMotifs[topIndices[x]]->len; p++){
+					for(int b=0; b<B; b++){
+						printf("%lf", matchMotifs[topIndices[x]]->f[p][b]);
+						if(b<B-1) printf("\t");
+					}
+					printf("\n");
+				}
+				printf(">>MATCH_PFM_END\n");
 			}
-			double Eval = 1-topScores[x];
-			fprintf(outPairs, "%s\t%.4e\t%s\t%s\n", currName, Eval, topAligns[x][0], topAligns[x][1]);
-			matchMotifs[topIndices[x]]->PrintMotif(outMatched, famNames);
+		}else{
+			// Default mode: write to files (enhanced with strand info)
+			fprintf(outPairs, ">\t%s\n", inputMotifs[i]->GetName());
+			for(x=0; x<topX; x++){
+				if(famNames){
+					sprintf(currName, "%s_%s", matchMotifs[topIndices[x]]->famName, matchMotifs[topIndices[x]]->GetName());
+				}else{
+					sprintf(currName, "%s", matchMotifs[topIndices[x]]->GetName());
+				}
+				double Eval = 1-topScores[x];
+				fprintf(outPairs, "%s\t%.4e\t%s\t%s\t%c\t%c\n", currName, Eval,
+					topAligns[x][0], topAligns[x][1],
+					topForward1[x] ? '+' : '-', topForward2[x] ? '+' : '-');
+				matchMotifs[topIndices[x]]->PrintMotif(outMatched, famNames);
+			}
 		}
 	}
 
-	fclose(outMatched);
-	fclose(outPairs);
+	if(webMode) printf(">>STAMP_MATCH_DETAILS_END\n");
+
+	if(outMatched != NULL) fclose(outMatched);
+	if(outPairs != NULL) fclose(outPairs);
 	delete [] topScores;
 	delete [] topIndices;
+	delete [] topForward1;
+	delete [] topForward2;
+	delete [] topQueryAlignStart;
+	delete [] topQueryAlignEnd;
+	delete [] topMatchAlignStart;
+	delete [] topMatchAlignEnd;
 	for(x=0; x<topX; x++){
 		delete [] topAligns[x][0];delete [] topAligns[x][1];
 		delete [] topAligns[x];

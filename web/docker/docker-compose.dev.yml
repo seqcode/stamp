@@ -1,0 +1,20 @@
+# Development compose file - only runs MongoDB and Redis
+# Run the Next.js app and worker locally with `npm run dev` and `npm run worker:dev`
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  mongo-data:
+  redis-data:

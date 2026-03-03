@@ -102,11 +102,12 @@ public:
 	//Align all matrices against all others
 	void PreAlign(Alignment* A_man);
 
-	//Print the pairwise alignments
-	void PrintPairwise();
+	//Print the pairwise alignments (webMode wraps in delimiters)
+	void PrintPairwise(bool webMode=false);
 
 	//Find the best matching motifs in the match set and print the pairs to a file
-	void SimilarityMatching(Alignment* A_man, char* outFileName, bool famNames, const int matchTopX);
+	//In webMode: emit to stdout with delimiters, no files written
+	void SimilarityMatching(Alignment* A_man, char* outFileName, bool famNames, const int matchTopX, bool webMode=false);
 
 	//Motif helpers
 	//Convertors for f
