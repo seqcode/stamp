@@ -36,6 +36,14 @@ export default function RootLayout({
                 >
                   GitHub
                 </a>
+                <a
+                  href="https://mahonylab.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-900"
+                >
+                  Mahony Lab
+                </a>
               </nav>
             </div>
           </header>
