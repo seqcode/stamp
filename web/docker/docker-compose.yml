@@ -5,20 +5,16 @@ services:
       dockerfile: web/docker/Dockerfile
     ports:
       - "3000:3000"
+    env_file:
+      - path: ../.env.local
+        required: false
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/stamp
       - REDIS_URL=redis://redis:6379
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - STAMP_BINARY=/app/stamp
       - SCORE_DISTS_DIR=/app/ScoreDists
       - JOBS_DATA_DIR=/app/data/jobs
       - NODE_ENV=production
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - SMTP_FROM=${SMTP_FROM:-noreply@stamp.example.com}
-      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
     depends_on:
       mongodb:
         condition: service_started
@@ -32,18 +28,15 @@ services:
     build:
       context: ../..
       dockerfile: web/docker/Dockerfile.worker
+    env_file:
+      - path: ../.env.local
+        required: false
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/stamp
       - REDIS_URL=redis://redis:6379
       - STAMP_BINARY=/app/stamp
       - SCORE_DISTS_DIR=/app/ScoreDists
       - JOBS_DATA_DIR=/app/data/jobs
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - SMTP_FROM=${SMTP_FROM:-noreply@stamp.example.com}
-      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
     depends_on:
       mongodb:
         condition: service_started
