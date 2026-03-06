@@ -399,7 +399,7 @@ export function exportLogosAsSvg(
   const hasLabels = logos.some((l) => l.label);
   const compositeW = (hasLabels ? labelWidth : 0) + maxLogoW;
 
-  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${compositeW}" height="${totalH}" viewBox="0 0 ${compositeW} ${totalH}">\n`;
+  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${compositeW}" height="${totalH}" viewBox="0 0 ${compositeW} ${totalH}">\n`;
   svgContent += `<rect width="100%" height="100%" fill="white"/>\n`;
 
   let y = 0;
@@ -414,7 +414,7 @@ export function exportLogosAsSvg(
 
     const dataUrl = logoCanvas.toDataURL("image/png");
     const xOff = hasLabels ? labelWidth : 0;
-    svgContent += `<image x="${xOff}" y="${y}" width="${lw}" height="${lh}" href="${dataUrl}"/>\n`;
+    svgContent += `<image x="${xOff}" y="${y}" width="${lw}" height="${lh}" href="${dataUrl}" xlink:href="${dataUrl}"/>\n`;
 
     y += lh + gap;
   }
