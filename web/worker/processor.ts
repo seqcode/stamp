@@ -303,32 +303,35 @@ async function sendEmailNotification(
   jobId: string,
   email: string
 ): Promise<void> {
-  const smtpHost = process.env.SMTP_HOST;
-  if (!smtpHost) return; // Email not configured
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return; // Email not configured
 
-  // Dynamic import to avoid loading nodemailer when not needed
-  const nodemailer = await import("nodemailer");
   const publicUrl = process.env.PUBLIC_URL || "http://localhost:3000";
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || "stamp@stamp.mahonylab.org";
 
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: Number(process.env.SMTP_PORT) || 587,
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      : undefined,
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: "STAMP", email: senderEmail },
+      to: [{ email }],
+      subject: `STAMP Analysis Complete - Job ${jobId}`,
+      textContent:
+        `Your STAMP analysis job has completed.\n\n` +
+        `View results: ${publicUrl}/jobs/${jobId}\n\n` +
+        `Results will be available for 7 days.`,
+      htmlContent:
+        `<p>Your STAMP analysis job has completed.</p>` +
+        `<p><a href="${publicUrl}/jobs/${jobId}">View Results</a></p>` +
+        `<p><small>Results will be available for 7 days.</small></p>`,
+    }),
   });
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || "noreply@stamp.example.com",
-    to: email,
-    subject: `STAMP Analysis Complete - Job ${jobId}`,
-    text:
-      `Your STAMP analysis job has completed.\n\n` +
-      `View results: ${publicUrl}/jobs/${jobId}\n\n` +
-      `Results will be available for 7 days.`,
-    html:
-      `<p>Your STAMP analysis job has completed.</p>` +
-      `<p><a href="${publicUrl}/jobs/${jobId}">View Results</a></p>` +
-      `<p><small>Results will be available for 7 days.</small></p>`,
-  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
+  }
 }
